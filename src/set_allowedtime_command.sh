@@ -19,7 +19,7 @@ allowedtime=${args[allowedtime]}
 parsed_allowedtime=$(parse_allowedtime $allowedtime)
 
 if [ "$parsed_allowedtime" != "ERROR" ]; then
-    sqlite3 /home/administrator/labman/labman.db "insert or replace into user_allowedtime values('$user','$parsed_allowedtime');"
+    sqlite3 labman.db "insert or replace into user_allowedtime values('$user','$parsed_allowedtime');"
 
     echo "Successfully set user $user allowed time to $allowedtime"
 else

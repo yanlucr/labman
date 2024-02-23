@@ -1,7 +1,7 @@
 generate_time_conf() {
     cp time.conf.sample time.conf
 
-    for line in $(sqlite3 /home/administrator/labman/labman.db "select * from user_allowedtime;"); do
+    for line in $(sqlite3 labman.db "select * from user_allowedtime;"); do
         IFS='|'
         read -ra userarr <<< "$line"
         user=${userarr[0]}

@@ -570,7 +570,7 @@ labman_remove_user_command() {
   # src/remove_user_command.sh
   user=${args[user]}
 
-  sqlite3 /home/administrator/labman/labman.db "delete from user_allowedtime where username='$user';"
+  sqlite3 labman.db "delete from user_allowedtime where username='$user';"
   ldapdeletegroup $user
   ldapdeleteuser $user
 }
@@ -628,7 +628,7 @@ labman_set_allowedtime_command() {
   parsed_allowedtime=$(parse_allowedtime $allowedtime)
 
   if [ "$parsed_allowedtime" != "ERROR" ]; then
-      sqlite3 /home/administrator/labman/labman.db "insert or replace into user_allowedtime values('$user','$parsed_allowedtime');"
+      sqlite3 labman.db "insert or replace into user_allowedtime values('$user','$parsed_allowedtime');"
 
       echo "Successfully set user $user allowed time to $allowedtime"
   else
@@ -643,7 +643,7 @@ labman_generate_time_config_command() {
   generate_time_conf() {
       cp time.conf.sample time.conf
 
-      for line in $(sqlite3 /home/administrator/labman/labman.db "select * from user_allowedtime;"); do
+      for line in $(sqlite3 labman.db "select * from user_allowedtime;"); do
           IFS='|'
           read -ra userarr <<< "$line"
           user=${userarr[0]}
