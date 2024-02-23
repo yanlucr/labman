@@ -605,24 +605,30 @@ labman_set_allowedtime_command() {
 # :command.function
 labman_generate_time_config_command() {
   # src/generate_time_config_command.sh
+  generate_time_conf() {
+      cp time.conf.sample time.conf
+
+      for line in $(sqlite3 /home/administrator/labman/labman.db "select * from user_allowedtime;"); do
+          IFS='|'
+          read -ra userarr <<< "$line"
+          user=${userarr[0]}
+          allowedtime=${userarr[1]}
+          echo -e "\n*;*;$user;$allowedtime" >> time.conf
+      done
+
+      echo -ne "\n# End of generated time.conf" >> time.conf
+  }
+
   print=${args[--print]}
   sync=${args[--sync]}
 
-  rm -f time.conf
-  touch time.conf
-
-  for line in $(sqlite3 /home/administrator/labman/labman.db "select * from user_allowedtime;"); do
-      IFS='|'
-      read -ra userarr <<< "$line"
-      user=${userarr[0]}
-      allowedtime=${userarr[1]}
-      echo "*;*;$user;$allowedtime" >> time.conf
-  done
+  generate_time_conf
 
   echo "Updated time.conf file created"
 
   if [[ $print ]]; then
       cat time.conf
+      echo
   fi
 
   if [[ $sync ]]; then
