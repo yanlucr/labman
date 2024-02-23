@@ -34,6 +34,7 @@ labman_usage() {
   echo
   # :command.usage_commands
   printf "%s\n" "Commands:"
+  printf "  %s   Setup database with default tables\n" "initialize_db       "
   printf "  %s   Add new object\n" "add                 "
   printf "  %s   Remove object\n" "remove              "
   printf "  %s   Add user to group\n" "addusertogroup      "
@@ -52,6 +53,35 @@ labman_usage() {
     echo
     printf "  %s\n" "--version, -v"
     printf "    Show version number\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+labman_initialize_db_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "labman initialize_db - Setup database with default tables\n"
+    echo
+
+  else
+    printf "labman initialize_db - Setup database with default tables\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  labman initialize_db\n"
+  printf "  labman initialize_db --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
     echo
 
   fi
@@ -510,6 +540,11 @@ inspect_args() {
 }
 
 # :command.command_functions
+# :command.function
+labman_initialize_db_command() {
+  # src/initialize_db_command.sh
+  sqlite3 labman.db "create table user_allowedtime(username text unique, allowedtime text);"
+}
 
 # :command.function
 labman_add_user_command() {
@@ -681,6 +716,13 @@ parse_requirements() {
   case $action in
     -*) ;;
 
+    initialize_db)
+      action="initialize_db"
+      shift
+      labman_initialize_db_parse_requirements "$@"
+      shift $#
+      ;;
+
     add | create)
       action="add"
       shift
@@ -735,6 +777,50 @@ parse_requirements() {
       ;;
 
   esac
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+# :command.parse_requirements
+labman_initialize_db_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        labman_initialize_db_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="initialize_db"
 
   # :command.parse_requirements_while
   while [[ $# -gt 0 ]]; do
@@ -1391,6 +1477,7 @@ run() {
   parse_requirements "${input[@]}"
 
   case "$action" in
+    "initialize_db") labman_initialize_db_command ;;
     "add") labman_add_command ;;
     "add user") labman_add_user_command ;;
     "add group") labman_add_group_command ;;

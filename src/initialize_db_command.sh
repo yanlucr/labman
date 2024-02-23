@@ -1,0 +1,1 @@
+sqlite3 labman.db "create table user_allowedtime(username text unique, allowedtime text);"

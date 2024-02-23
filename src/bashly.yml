@@ -7,6 +7,9 @@ dependencies:
   sqlite3:
 
 commands:
+- name: initialize_db
+  help: Setup database with default tables
+
 - name: add
   alias: create
   help: Add new object
