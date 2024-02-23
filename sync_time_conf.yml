@@ -1,0 +1,12 @@
+- hosts: all
+  become: true
+  tasks:
+    - name: Backup and copy new time.conf
+      tags: always
+      copy:
+        src: time.conf
+        dest: /etc/security/time.conf
+        owner: root
+        group: root
+        mode: 0644
+        backup: true

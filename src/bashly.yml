@@ -1,0 +1,83 @@
+name: labman
+help: Access Management application
+version: 0.1.0
+
+dependencies:
+  ldapadduser: install ldapscripts
+  sqlite3:
+
+commands:
+- name: add
+  alias: create
+  help: Add new object
+
+  commands:
+  - name: user
+    help: Add new user
+    args:
+    - name: user
+      help: User name
+      required: true
+  - name: group
+    help: Add new group
+    args:
+    - name: group
+      help: Group name
+      required: true
+
+- name: remove
+  alias: delete
+  help: Remove object
+
+  commands:
+  - name: user
+    help: Remove user
+    args:
+    - name: user
+      help: User name
+      required: true
+  - name: group
+    help: Remove group
+    args:
+    - name: group
+      help: Group name
+      required: true
+
+- name: addusertogroup
+  help: Add user to group
+  args:
+  - name: user
+    help: User to be added to group
+    required: true
+  - name: group
+    help: Group to add user to
+    required: true
+- name: removeuserfromgroup
+  help: Remove user from group
+  args:
+  - name: user
+    help: User to be removed from group
+    required: true
+  - name: group
+    help: Group to remove user from
+    required: true
+
+- name: set_allowedtime
+  help: Set allowed time for user
+  args:
+  - name: user
+    help: Affected user
+    required: true
+  - name: allowedtime
+    help: Allowed time for user
+    required: true
+
+- name: generate_time_config
+  help: Generate time.conf settings based on database entries
+  flags:
+  - long: --print
+    short: -p
+    help: Print generated time.conf output
+  - long: --sync
+    short: -s
+    help: Sync time.conf on managed machines
