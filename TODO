@@ -1,0 +1,7 @@
+- Add frontend
+- Automate server and client initial setup with ansible playbook 
+  - Server-side
+  - Client-side
+- Add extra documentation
+- Add database schema
+- Try to find another way of preventing access
