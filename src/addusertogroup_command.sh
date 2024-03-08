@@ -1,4 +1,4 @@
 user=${args[user]}
 group=${args[group]}
 
-ldapaddusertogroup $user $group
+add_user_to_group $user $group

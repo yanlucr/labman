@@ -777,15 +777,98 @@ inspect_args() {
   fi
 }
 
+# :command.user_lib
+# src/lib/database.sh
+initialize_database() {
+    sqlite3 labman.db "create table user_allowedtime(username text unique, allowedtime text);"
+    sqlite3 labman.db "create table disciplines(discipline text unique);"
+    sqlite3 labman.db "create table discipline_user(discipline text, username text, unique(discipline, username));"
+    sqlite3 labman.db "create table discipline_allowedtime(discipline text unique, allowedtime text);"
+}
+
+# src/lib/disciplines.sh
+discipline_exists() {
+  sqlite3 labman.db "select 1 from disciplines where discipline='$1'"
+}
+
+add_discipline() {
+  sqlite3 labman.db "insert into disciplines values('$1');"
+}
+
+add_user_to_discipline() {
+  sqlite3 labman.db "insert into discipline_user values('$2','$1')"
+}
+
+remove_discipline() {
+  sqlite3 labman.db "delete from discipline_allowedtime where discipline='$1';"
+  sqlite3 labman.db "delete from discipline_user where discipline='$1';"
+  sqlite3 labman.db "delete from disciplines where discipline='$1';"
+}
+
+delete_user_from_discipline() {
+  sqlite3 labman.db "delete from discipline_user where username='$1' and discipline='$2'"
+}
+
+set_discipline_allowedtime() {
+  sqlite3 labman.db "insert or replace into discipline_allowedtime values('$1','$2');"
+}
+
+# src/lib/groups.sh
+add_group() {
+    ldapaddgroup $1
+}
+
+remove_group() {
+    ldapdeletegroup $1
+}
+
+# src/lib/parsers.sh
+parse_allowedtime() {
+    local allowedtime="$1"
+
+    if [ "$allowedtime" = "always" ]; then
+        allowedtime="Al0000-2400"
+    elif [ "$allowedtime" = "never" ]; then
+        allowedtime="!Al0000-2400"
+    elif [[ "$allowedtime" =~ ^[0-9]{4}-[0-9]{4}$ ]]; then
+        allowedtime="Al$allowedtime"
+    else
+        allowedtime="ERROR"
+    fi
+
+    echo $allowedtime
+}
+
+# src/lib/users.sh
+add_user() {
+  ldapaddgroup $1
+  ldapadduser $1 $1
+  ldapaddusertogroup $1 administrators
+}
+
+add_user_to_group() {
+  ldapaddusertogroup $1 $2
+}
+
+remove_user() {
+    sqlite3 labman.db "delete from user_allowedtime where username='$1';"
+    ldapdeletegroup $1
+    ldapdeleteuser $1
+}
+
+remove_user_from_group() {
+    ldapdeleteuserfromgroup $1 $2
+}
+
+set_user_allowedtime() {
+  sqlite3 labman.db "insert or replace into user_allowedtime values('$1','$2');"
+}
+
 # :command.command_functions
 # :command.function
 labman_initialize_db_command() {
   # src/initialize_db_command.sh
-  sqlite3 labman.db "create table user_allowedtime(username text unique, allowedtime text);"
-
-  sqlite3 labman.db "create table disciplines(discipline text unique);"
-  sqlite3 labman.db "create table discipline_user(discipline text, username text, unique(discipline, username));"
-  sqlite3 labman.db "create table discipline_allowedtime(discipline text unique, allowedtime text);"
+  initialize_database
 }
 
 # :command.function
@@ -793,9 +876,7 @@ labman_add_user_command() {
   # src/add_user_command.sh
   user=${args[user]}
 
-  ldapaddgroup $user
-  ldapadduser $user $user
-  ldapaddusertogroup $user administrators
+  add_user $user
 }
 
 # :command.function
@@ -803,7 +884,7 @@ labman_add_group_command() {
   # src/add_group_command.sh
   group=${args[group]}
 
-  ldapaddgroup $group
+  add_group $group
 
 }
 
@@ -812,7 +893,7 @@ labman_add_discipline_command() {
   # src/add_discipline_command.sh
   discipline=${args[discipline]}
 
-  sqlite3 labman.db "insert into disciplines values('$discipline');"
+  add_discipline $discipline
 }
 
 # :command.function
@@ -820,9 +901,7 @@ labman_remove_user_command() {
   # src/remove_user_command.sh
   user=${args[user]}
 
-  sqlite3 labman.db "delete from user_allowedtime where username='$user';"
-  ldapdeletegroup $user
-  ldapdeleteuser $user
+  remove_user $user
 }
 
 # :command.function
@@ -830,7 +909,7 @@ labman_remove_group_command() {
   # src/remove_group_command.sh
   group=${args[group]}
 
-  ldapdeletegroup $group
+  remove_group $group
 
 }
 
@@ -839,9 +918,7 @@ labman_remove_discipline_command() {
   # src/remove_discipline_command.sh
   discipline=${args[discipline]}
 
-  sqlite3 labman.db "delete from discipline_allowedtime where discipline='$discipline';"
-  sqlite3 labman.db "delete from discipline_user where discipline='$discipline';"
-  sqlite3 labman.db "delete from disciplines where discipline='$discipline';"
+  remove_discipline $discipline
 
 }
 
@@ -851,7 +928,7 @@ labman_addusertogroup_command() {
   user=${args[user]}
   group=${args[group]}
 
-  ldapaddusertogroup $user $group
+  add_user_to_group $user $group
 
 }
 
@@ -861,7 +938,7 @@ labman_removeuserfromgroup_command() {
   user=${args[user]}
   group=${args[group]}
 
-  ldapdeleteuserfromgroup $user $group
+  remove_user_from_group $user $group
 
 }
 
@@ -871,10 +948,10 @@ labman_addusertodiscipline_command() {
   user=${args[user]}
   discipline=${args[discipline]}
 
-  discipline_exists=$(sqlite3 labman.db "select 1 from disciplines where discipline='$discipline'")
+  discipline_exists=$(discipline_exists $discipline)
 
   if [[ $discipline_exists ]]; then
-      sqlite3 labman.db "insert into discipline_user values('$discipline','$user')"
+      add_user_to_discipline $user $discipline
       echo "User $user added to discipline $discipline"
   else
       echo "No discipline named $discipline found in database"
@@ -889,35 +966,19 @@ labman_removeuserfromdiscipline_command() {
   user=${args[user]}
   discipline=${args[discipline]}
 
-  sqlite3 labman.db "delete from discipline_user where username='$user' and discipline='$discipline'"
+  delete_user_from_discipline $user $discipline
 
 }
 
 # :command.function
 labman_set_allowedtime_user_command() {
   # src/set_allowedtime_user_command.sh
-  parse_allowedtime() {
-      local allowedtime="$1"
-
-      if [ "$allowedtime" = "always" ]; then
-          allowedtime="Al0000-2400"
-      elif [ "$allowedtime" = "never" ]; then
-          allowedtime="!Al0000-2400"
-      elif [[ "$allowedtime" =~ ^[0-9]{4}-[0-9]{4}$ ]]; then
-          allowedtime="Al$allowedtime"
-      else
-          allowedtime="ERROR"
-      fi
-
-      echo $allowedtime
-  }
-
   user=${args[user]}
   allowedtime=${args[allowedtime]}
   parsed_allowedtime=$(parse_allowedtime $allowedtime)
 
   if [ "$parsed_allowedtime" != "ERROR" ]; then
-      sqlite3 labman.db "insert or replace into user_allowedtime values('$user','$parsed_allowedtime');"
+      set_user_allowedtime $user $parsed_allowedtime
 
       echo "Successfully set user $user allowed time to $allowedtime"
   else
@@ -929,28 +990,12 @@ labman_set_allowedtime_user_command() {
 # :command.function
 labman_set_allowedtime_discipline_command() {
   # src/set_allowedtime_discipline_command.sh
-  parse_allowedtime() {
-      local allowedtime="$1"
-
-      if [ "$allowedtime" = "always" ]; then
-          allowedtime="Al0000-2400"
-      elif [ "$allowedtime" = "never" ]; then
-          allowedtime="!Al0000-2400"
-      elif [[ "$allowedtime" =~ ^[0-9]{4}-[0-9]{4}$ ]]; then
-          allowedtime="Al$allowedtime"
-      else
-          allowedtime="ERROR"
-      fi
-
-      echo $allowedtime
-  }
-
   discipline=${args[discipline]}
   allowedtime=${args[allowedtime]}
   parsed_allowedtime=$(parse_allowedtime $allowedtime)
 
   if [ "$parsed_allowedtime" != "ERROR" ]; then
-      sqlite3 labman.db "insert or replace into discipline_allowedtime values('$discipline','$parsed_allowedtime');"
+      set_discipline_allowedtime $discipline $parsed_allowedtime
 
       echo "Successfully set discipline $discipline allowed time to $allowedtime"
   else
@@ -974,7 +1019,7 @@ labman_generate_time_config_command() {
           user=${arr[0]}
           rules=${arr[1]}
 
-          for extra_rule in $(sqlite3 labman.db "select allowedtime from discipline_allowedtime da join discipline_user du on da.discipline=du.discipline where username='ronaldo';"); do
+          for extra_rule in $(sqlite3 labman.db "select allowedtime from discipline_allowedtime da join discipline_user du on da.discipline=du.discipline where username='$user';"); do
               rules="$rules|$extra_rule"
           done
 
@@ -988,8 +1033,6 @@ labman_generate_time_config_command() {
           IFS="$OLD_IFS"
           discipline=${arr[0]}
           allowedtime=${arr[1]}
-
-          echo $discipline
 
           for user in $(sqlite3 labman.db "select username from discipline_user where discipline='$discipline' and username not in (select username from user_allowedtime)";); do
               echo -e "\n*;*;$user;$allowedtime" >> time.conf

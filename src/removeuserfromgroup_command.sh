@@ -1,4 +1,4 @@
 user=${args[user]}
 group=${args[group]}
 
-ldapdeleteuserfromgroup $user $group
+remove_user_from_group $user $group

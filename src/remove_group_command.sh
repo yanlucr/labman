@@ -1,3 +1,3 @@
 group=${args[group]}
 
-ldapdeletegroup $group
+remove_group $group

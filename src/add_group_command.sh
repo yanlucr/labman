@@ -1,3 +1,3 @@
 group=${args[group]}
 
-ldapaddgroup $group
+add_group $group

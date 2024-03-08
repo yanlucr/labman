@@ -10,7 +10,7 @@ generate_time_conf() {
         user=${arr[0]}
         rules=${arr[1]}
 
-        for extra_rule in $(sqlite3 labman.db "select allowedtime from discipline_allowedtime da join discipline_user du on da.discipline=du.discipline where username='ronaldo';"); do
+        for extra_rule in $(sqlite3 labman.db "select allowedtime from discipline_allowedtime da join discipline_user du on da.discipline=du.discipline where username='$user';"); do
             rules="$rules|$extra_rule"
         done
 
@@ -24,8 +24,6 @@ generate_time_conf() {
         IFS="$OLD_IFS"
         discipline=${arr[0]}
         allowedtime=${arr[1]}
-
-        echo $discipline
 
         for user in $(sqlite3 labman.db "select username from discipline_user where discipline='$discipline' and username not in (select username from user_allowedtime)";); do
             echo -e "\n*;*;$user;$allowedtime" >> time.conf
