@@ -3,14 +3,14 @@ generate_time_conf() {
     cp time.conf.sample time.conf
 
     # for users with explicit rules against them
-    for line in $(sqlite3 labman.db "select * from user_allowedtime;"); do
+    for line in $(get_users_allowedtime); do
         IFS='|'
         read -ra arr <<< "$line"
         IFS="$OLD_IFS"
         user=${arr[0]}
         rules=${arr[1]}
 
-        for extra_rule in $(sqlite3 labman.db "select allowedtime from discipline_allowedtime da join discipline_user du on da.discipline=du.discipline where username='$user';"); do
+        for extra_rule in $(get_user_allowedtime_from_disciplines $user); do
             rules="$rules|$extra_rule"
         done
 
@@ -18,14 +18,14 @@ generate_time_conf() {
     done
 
     # for users with no explicit rules
-    for line in $(sqlite3 labman.db "select * from discipline_allowedtime;"); do
+    for line in $(get_disciplines_allowedtime); do
         IFS='|'
         read -ra arr <<< "$line"
         IFS="$OLD_IFS"
         discipline=${arr[0]}
         allowedtime=${arr[1]}
 
-        for user in $(sqlite3 labman.db "select username from discipline_user where discipline='$discipline' and username not in (select username from user_allowedtime)";); do
+        for user in $(get_users_with_no_explicit_allowedtime); do
             echo -e "\n*;*;$user;$allowedtime" >> time.conf
         done
     done
