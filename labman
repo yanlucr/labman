@@ -34,13 +34,15 @@ labman_usage() {
   echo
   # :command.usage_commands
   printf "%s\n" "Commands:"
-  printf "  %s   Setup database with default tables\n" "initialize_db       "
-  printf "  %s   Add new object\n" "add                 "
-  printf "  %s   Remove object\n" "remove              "
-  printf "  %s   Add user to group\n" "addusertogroup      "
-  printf "  %s   Remove user from group\n" "removeuserfromgroup "
-  printf "  %s   Set allowed time for user\n" "set_allowedtime     "
-  printf "  %s   Generate time.conf settings based on database entries\n" "generate_time_config"
+  printf "  %s   Setup database with default tables\n" "initialize_db           "
+  printf "  %s   Add new object\n" "add                     "
+  printf "  %s   Remove object\n" "remove                  "
+  printf "  %s   Add user to group\n" "addusertogroup          "
+  printf "  %s   Remove user from group\n" "removeuserfromgroup     "
+  printf "  %s   Add user to discipline\n" "addusertodiscipline     "
+  printf "  %s   Remove user from discipline\n" "removeuserfromdiscipline"
+  printf "  %s   Set allowed time for users or disciplines\n" "set_allowedtime         "
+  printf "  %s   Generate time.conf settings based on database entries\n" "generate_time_config    "
   echo
 
   # :command.long_usage
@@ -108,8 +110,9 @@ labman_add_usage() {
   echo
   # :command.usage_commands
   printf "%s\n" "Commands:"
-  printf "  %s   Add new user\n" "user "
-  printf "  %s   Add new group\n" "group"
+  printf "  %s   Add new user\n" "user      "
+  printf "  %s   Add new group\n" "group     "
+  printf "  %s   Add new discipline\n" "discipline"
   echo
 
   # :command.long_usage
@@ -199,6 +202,43 @@ labman_add_group_usage() {
 }
 
 # :command.usage
+labman_add_discipline_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "labman add discipline - Add new discipline\n"
+    echo
+
+  else
+    printf "labman add discipline - Add new discipline\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  labman add discipline DISCIPLINE\n"
+  printf "  labman add discipline --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "DISCIPLINE"
+    printf "    Discipline name\n"
+    echo
+
+  fi
+}
+
+# :command.usage
 labman_remove_usage() {
   if [[ -n $long_usage ]]; then
     printf "labman remove - Remove object\n"
@@ -219,8 +259,9 @@ labman_remove_usage() {
   echo
   # :command.usage_commands
   printf "%s\n" "Commands:"
-  printf "  %s   Remove user\n" "user "
-  printf "  %s   Remove group\n" "group"
+  printf "  %s   Remove user\n" "user      "
+  printf "  %s   Remove group\n" "group     "
+  printf "  %s   Remove discipline\n" "discipline"
   echo
 
   # :command.long_usage
@@ -304,6 +345,43 @@ labman_remove_group_usage() {
     # :argument.usage
     printf "  %s\n" "GROUP"
     printf "    Group name\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+labman_remove_discipline_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "labman remove discipline - Remove discipline\n"
+    echo
+
+  else
+    printf "labman remove discipline - Remove discipline\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  labman remove discipline DISCIPLINE\n"
+  printf "  labman remove discipline --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "DISCIPLINE"
+    printf "    Discipline name\n"
     echo
 
   fi
@@ -394,20 +472,138 @@ labman_removeuserfromgroup_usage() {
 }
 
 # :command.usage
-labman_set_allowedtime_usage() {
+labman_addusertodiscipline_usage() {
   if [[ -n $long_usage ]]; then
-    printf "labman set_allowedtime - Set allowed time for user\n"
+    printf "labman addusertodiscipline - Add user to discipline\n"
     echo
 
   else
-    printf "labman set_allowedtime - Set allowed time for user\n"
+    printf "labman addusertodiscipline - Add user to discipline\n"
     echo
 
   fi
 
   printf "%s\n" "Usage:"
-  printf "  labman set_allowedtime USER ALLOWEDTIME\n"
-  printf "  labman set_allowedtime --help | -h\n"
+  printf "  labman addusertodiscipline USER DISCIPLINE\n"
+  printf "  labman addusertodiscipline --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "USER"
+    printf "    User to be added to discipline\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "DISCIPLINE"
+    printf "    Discipline to add user to\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+labman_removeuserfromdiscipline_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "labman removeuserfromdiscipline - Remove user from discipline\n"
+    echo
+
+  else
+    printf "labman removeuserfromdiscipline - Remove user from discipline\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  labman removeuserfromdiscipline USER DISCIPLINE\n"
+  printf "  labman removeuserfromdiscipline --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "USER"
+    printf "    User to be removed from discipline\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "DISCIPLINE"
+    printf "    Discipline to remove user from\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+labman_set_allowedtime_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "labman set_allowedtime - Set allowed time for users or disciplines\n"
+    echo
+
+  else
+    printf "labman set_allowedtime - Set allowed time for users or disciplines\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  labman set_allowedtime COMMAND\n"
+  printf "  labman set_allowedtime [COMMAND] --help | -h\n"
+  echo
+  # :command.usage_commands
+  printf "%s\n" "Commands:"
+  printf "  %s   Set allowed time for users\n" "user      "
+  printf "  %s   Set allowed time for disciplines\n" "discipline"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+labman_set_allowedtime_user_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "labman set_allowedtime user - Set allowed time for users\n"
+    echo
+
+  else
+    printf "labman set_allowedtime user - Set allowed time for users\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  labman set_allowedtime user USER ALLOWEDTIME\n"
+  printf "  labman set_allowedtime user --help | -h\n"
   echo
 
   # :command.long_usage
@@ -430,6 +626,48 @@ labman_set_allowedtime_usage() {
     # :argument.usage
     printf "  %s\n" "ALLOWEDTIME"
     printf "    Allowed time for user\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+labman_set_allowedtime_discipline_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "labman set_allowedtime discipline - Set allowed time for disciplines\n"
+    echo
+
+  else
+    printf "labman set_allowedtime discipline - Set allowed time for disciplines\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  labman set_allowedtime discipline DISCIPLINE ALLOWEDTIME\n"
+  printf "  labman set_allowedtime discipline --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "DISCIPLINE"
+    printf "    Affected discipline\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "ALLOWEDTIME"
+    printf "    Allowed time for discipline\n"
     echo
 
   fi
@@ -544,6 +782,10 @@ inspect_args() {
 labman_initialize_db_command() {
   # src/initialize_db_command.sh
   sqlite3 labman.db "create table user_allowedtime(username text unique, allowedtime text);"
+
+  sqlite3 labman.db "create table disciplines(discipline text unique);"
+  sqlite3 labman.db "create table discipline_user(discipline text, username text, unique(discipline, username));"
+  sqlite3 labman.db "create table discipline_allowedtime(discipline text unique, allowedtime text);"
 }
 
 # :command.function
@@ -566,6 +808,14 @@ labman_add_group_command() {
 }
 
 # :command.function
+labman_add_discipline_command() {
+  # src/add_discipline_command.sh
+  discipline=${args[discipline]}
+
+  sqlite3 labman.db "insert into disciplines values('$discipline');"
+}
+
+# :command.function
 labman_remove_user_command() {
   # src/remove_user_command.sh
   user=${args[user]}
@@ -581,6 +831,17 @@ labman_remove_group_command() {
   group=${args[group]}
 
   ldapdeletegroup $group
+
+}
+
+# :command.function
+labman_remove_discipline_command() {
+  # src/remove_discipline_command.sh
+  discipline=${args[discipline]}
+
+  sqlite3 labman.db "delete from discipline_allowedtime where discipline='$discipline';"
+  sqlite3 labman.db "delete from discipline_user where discipline='$discipline';"
+  sqlite3 labman.db "delete from disciplines where discipline='$discipline';"
 
 }
 
@@ -605,8 +866,36 @@ labman_removeuserfromgroup_command() {
 }
 
 # :command.function
-labman_set_allowedtime_command() {
-  # src/set_allowedtime_command.sh
+labman_addusertodiscipline_command() {
+  # src/addusertodiscipline_command.sh
+  user=${args[user]}
+  discipline=${args[discipline]}
+
+  discipline_exists=$(sqlite3 labman.db "select 1 from disciplines where discipline='$discipline'")
+
+  if [[ $discipline_exists ]]; then
+      sqlite3 labman.db "insert into discipline_user values('$discipline','$user')"
+      echo "User $user added to discipline $discipline"
+  else
+      echo "No discipline named $discipline found in database"
+      exit 1
+  fi
+
+}
+
+# :command.function
+labman_removeuserfromdiscipline_command() {
+  # src/removeuserfromdiscipline_command.sh
+  user=${args[user]}
+  discipline=${args[discipline]}
+
+  sqlite3 labman.db "delete from discipline_user where username='$user' and discipline='$discipline'"
+
+}
+
+# :command.function
+labman_set_allowedtime_user_command() {
+  # src/set_allowedtime_user_command.sh
   parse_allowedtime() {
       local allowedtime="$1"
 
@@ -638,17 +927,73 @@ labman_set_allowedtime_command() {
 }
 
 # :command.function
+labman_set_allowedtime_discipline_command() {
+  # src/set_allowedtime_discipline_command.sh
+  parse_allowedtime() {
+      local allowedtime="$1"
+
+      if [ "$allowedtime" = "always" ]; then
+          allowedtime="Al0000-2400"
+      elif [ "$allowedtime" = "never" ]; then
+          allowedtime="!Al0000-2400"
+      elif [[ "$allowedtime" =~ ^[0-9]{4}-[0-9]{4}$ ]]; then
+          allowedtime="Al$allowedtime"
+      else
+          allowedtime="ERROR"
+      fi
+
+      echo $allowedtime
+  }
+
+  discipline=${args[discipline]}
+  allowedtime=${args[allowedtime]}
+  parsed_allowedtime=$(parse_allowedtime $allowedtime)
+
+  if [ "$parsed_allowedtime" != "ERROR" ]; then
+      sqlite3 labman.db "insert or replace into discipline_allowedtime values('$discipline','$parsed_allowedtime');"
+
+      echo "Successfully set discipline $discipline allowed time to $allowedtime"
+  else
+      echo "Wrong allowedtime format: $allowedtime"
+      echo "Try these instead: always, never, 0800-1600(START-END)"
+  fi
+}
+
+# :command.function
 labman_generate_time_config_command() {
   # src/generate_time_config_command.sh
   generate_time_conf() {
+      OLD_IFS="$IFS"
       cp time.conf.sample time.conf
 
+      # for users with explicit rules against them
       for line in $(sqlite3 labman.db "select * from user_allowedtime;"); do
           IFS='|'
-          read -ra userarr <<< "$line"
-          user=${userarr[0]}
-          allowedtime=${userarr[1]}
-          echo -e "\n*;*;$user;$allowedtime" >> time.conf
+          read -ra arr <<< "$line"
+          IFS="$OLD_IFS"
+          user=${arr[0]}
+          rules=${arr[1]}
+
+          for extra_rule in $(sqlite3 labman.db "select allowedtime from discipline_allowedtime da join discipline_user du on da.discipline=du.discipline where username='ronaldo';"); do
+              rules="$rules|$extra_rule"
+          done
+
+          echo -e "\n*;*;$user;$rules" >> time.conf
+      done
+
+      # for users with no explicit rules
+      for line in $(sqlite3 labman.db "select * from discipline_allowedtime;"); do
+          IFS='|'
+          read -ra arr <<< "$line"
+          IFS="$OLD_IFS"
+          discipline=${arr[0]}
+          allowedtime=${arr[1]}
+
+          echo $discipline
+
+          for user in $(sqlite3 labman.db "select username from discipline_user where discipline='$discipline' and username not in (select username from user_allowedtime)";); do
+              echo -e "\n*;*;$user;$allowedtime" >> time.conf
+          done
       done
 
       echo -ne "\n# End of generated time.conf" >> time.conf
@@ -748,6 +1093,20 @@ parse_requirements() {
       action="removeuserfromgroup"
       shift
       labman_removeuserfromgroup_parse_requirements "$@"
+      shift $#
+      ;;
+
+    addusertodiscipline)
+      action="addusertodiscipline"
+      shift
+      labman_addusertodiscipline_parse_requirements "$@"
+      shift $#
+      ;;
+
+    removeuserfromdiscipline)
+      action="removeuserfromdiscipline"
+      shift
+      labman_removeuserfromdiscipline_parse_requirements "$@"
       shift $#
       ;;
 
@@ -880,6 +1239,13 @@ labman_add_parse_requirements() {
       action="group"
       shift
       labman_add_group_parse_requirements "$@"
+      shift $#
+      ;;
+
+    discipline)
+      action="discipline"
+      shift
+      labman_add_discipline_parse_requirements "$@"
       shift $#
       ;;
 
@@ -1030,6 +1396,61 @@ labman_add_group_parse_requirements() {
 }
 
 # :command.parse_requirements
+labman_add_discipline_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        labman_add_discipline_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="add discipline"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        if [[ -z ${args['discipline']+x} ]]; then
+          args['discipline']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_args_filter
+  if [[ -z ${args['discipline']+x} ]]; then
+    printf "missing required argument: DISCIPLINE\nusage: labman add discipline DISCIPLINE\n" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
 labman_remove_parse_requirements() {
   # :command.fixed_flags_filter
   while [[ $# -gt 0 ]]; do
@@ -1064,6 +1485,13 @@ labman_remove_parse_requirements() {
       action="group"
       shift
       labman_remove_group_parse_requirements "$@"
+      shift $#
+      ;;
+
+    discipline)
+      action="discipline"
+      shift
+      labman_remove_discipline_parse_requirements "$@"
       shift $#
       ;;
 
@@ -1214,6 +1642,61 @@ labman_remove_group_parse_requirements() {
 }
 
 # :command.parse_requirements
+labman_remove_discipline_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        labman_remove_discipline_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="remove discipline"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        if [[ -z ${args['discipline']+x} ]]; then
+          args['discipline']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_args_filter
+  if [[ -z ${args['discipline']+x} ]]; then
+    printf "missing required argument: DISCIPLINE\nusage: labman remove discipline DISCIPLINE\n" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
 labman_addusertogroup_parse_requirements() {
   # :command.fixed_flags_filter
   while [[ $# -gt 0 ]]; do
@@ -1338,6 +1821,130 @@ labman_removeuserfromgroup_parse_requirements() {
 }
 
 # :command.parse_requirements
+labman_addusertodiscipline_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        labman_addusertodiscipline_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="addusertodiscipline"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        if [[ -z ${args['user']+x} ]]; then
+          args['user']=$1
+          shift
+        elif [[ -z ${args['discipline']+x} ]]; then
+          args['discipline']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_args_filter
+  if [[ -z ${args['user']+x} ]]; then
+    printf "missing required argument: USER\nusage: labman addusertodiscipline USER DISCIPLINE\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['discipline']+x} ]]; then
+    printf "missing required argument: DISCIPLINE\nusage: labman addusertodiscipline USER DISCIPLINE\n" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
+labman_removeuserfromdiscipline_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        labman_removeuserfromdiscipline_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="removeuserfromdiscipline"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        if [[ -z ${args['user']+x} ]]; then
+          args['user']=$1
+          shift
+        elif [[ -z ${args['discipline']+x} ]]; then
+          args['discipline']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_args_filter
+  if [[ -z ${args['user']+x} ]]; then
+    printf "missing required argument: USER\nusage: labman removeuserfromdiscipline USER DISCIPLINE\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['discipline']+x} ]]; then
+    printf "missing required argument: DISCIPLINE\nusage: labman removeuserfromdiscipline USER DISCIPLINE\n" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
 labman_set_allowedtime_parse_requirements() {
   # :command.fixed_flags_filter
   while [[ $# -gt 0 ]]; do
@@ -1356,7 +1963,81 @@ labman_set_allowedtime_parse_requirements() {
   done
 
   # :command.command_filter
-  action="set_allowedtime"
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    user)
+      action="user"
+      shift
+      labman_set_allowedtime_user_parse_requirements "$@"
+      shift $#
+      ;;
+
+    discipline)
+      action="discipline"
+      shift
+      labman_set_allowedtime_discipline_parse_requirements "$@"
+      shift $#
+      ;;
+
+    # :command.command_fallback
+    "")
+      labman_set_allowedtime_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+# :command.parse_requirements
+labman_set_allowedtime_user_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        labman_set_allowedtime_user_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="set_allowedtime user"
 
   # :command.parse_requirements_while
   while [[ $# -gt 0 ]]; do
@@ -1389,11 +2070,73 @@ labman_set_allowedtime_parse_requirements() {
 
   # :command.required_args_filter
   if [[ -z ${args['user']+x} ]]; then
-    printf "missing required argument: USER\nusage: labman set_allowedtime USER ALLOWEDTIME\n" >&2
+    printf "missing required argument: USER\nusage: labman set_allowedtime user USER ALLOWEDTIME\n" >&2
     exit 1
   fi
   if [[ -z ${args['allowedtime']+x} ]]; then
-    printf "missing required argument: ALLOWEDTIME\nusage: labman set_allowedtime USER ALLOWEDTIME\n" >&2
+    printf "missing required argument: ALLOWEDTIME\nusage: labman set_allowedtime user USER ALLOWEDTIME\n" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
+labman_set_allowedtime_discipline_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        labman_set_allowedtime_discipline_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="set_allowedtime discipline"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        if [[ -z ${args['discipline']+x} ]]; then
+          args['discipline']=$1
+          shift
+        elif [[ -z ${args['allowedtime']+x} ]]; then
+          args['allowedtime']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_args_filter
+  if [[ -z ${args['discipline']+x} ]]; then
+    printf "missing required argument: DISCIPLINE\nusage: labman set_allowedtime discipline DISCIPLINE ALLOWEDTIME\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['allowedtime']+x} ]]; then
+    printf "missing required argument: ALLOWEDTIME\nusage: labman set_allowedtime discipline DISCIPLINE ALLOWEDTIME\n" >&2
     exit 1
   fi
 
@@ -1481,12 +2224,18 @@ run() {
     "add") labman_add_command ;;
     "add user") labman_add_user_command ;;
     "add group") labman_add_group_command ;;
+    "add discipline") labman_add_discipline_command ;;
     "remove") labman_remove_command ;;
     "remove user") labman_remove_user_command ;;
     "remove group") labman_remove_group_command ;;
+    "remove discipline") labman_remove_discipline_command ;;
     "addusertogroup") labman_addusertogroup_command ;;
     "removeuserfromgroup") labman_removeuserfromgroup_command ;;
+    "addusertodiscipline") labman_addusertodiscipline_command ;;
+    "removeuserfromdiscipline") labman_removeuserfromdiscipline_command ;;
     "set_allowedtime") labman_set_allowedtime_command ;;
+    "set_allowedtime user") labman_set_allowedtime_user_command ;;
+    "set_allowedtime discipline") labman_set_allowedtime_discipline_command ;;
     "generate_time_config") labman_generate_time_config_command ;;
   esac
 }

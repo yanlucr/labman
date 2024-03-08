@@ -27,6 +27,12 @@ commands:
     - name: group
       help: Group name
       required: true
+  - name: discipline
+    help: Add new discipline
+    args:
+    - name: discipline
+      help: Discipline name
+      required: true
 
 - name: remove
   alias: delete
@@ -44,6 +50,12 @@ commands:
     args:
     - name: group
       help: Group name
+      required: true
+  - name: discipline
+    help: Remove discipline
+    args:
+    - name: discipline
+      help: Discipline name
       required: true
 
 - name: addusertogroup
@@ -65,15 +77,46 @@ commands:
     help: Group to remove user from
     required: true
 
-- name: set_allowedtime
-  help: Set allowed time for user
+- name: addusertodiscipline
+  help: Add user to discipline
   args:
   - name: user
-    help: Affected user
+    help: User to be added to discipline
     required: true
-  - name: allowedtime
-    help: Allowed time for user
+  - name: discipline
+    help: Discipline to add user to
     required: true
+- name: removeuserfromdiscipline
+  help: Remove user from discipline
+  args:
+  - name: user
+    help: User to be removed from discipline
+    required: true
+  - name: discipline
+    help: Discipline to remove user from
+    required: true
+
+- name: set_allowedtime
+  help: Set allowed time for users or disciplines
+  commands:
+  - name: user
+    help: Set allowed time for users
+    args:
+    - name: user
+      help: Affected user
+      required: true
+    - name: allowedtime
+      help: Allowed time for user
+      required: true
+  - name: discipline
+    help: Set allowed time for disciplines
+    args:
+    - name: discipline
+      help: Affected discipline
+      required: true
+    - name: allowedtime
+      help: Allowed time for discipline
+      required: true
 
 - name: generate_time_config
   help: Generate time.conf settings based on database entries
