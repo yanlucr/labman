@@ -1,0 +1,45 @@
+---
+- name: Setup client machines
+  hosts: all
+  become: true
+  tasks:
+    - name: Add mapping to /etc/hosts
+      ansible.builtin.blockinfile:
+        block: "10.0.2.7\tldap.domain.com"
+        path: /etc/hosts
+    - name: Get certificate from host machine
+      ansible.builtin.shell: echo -n | openssl s_client -connect ldap.domain.com:636 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /usr/local/share/ca-certificates/ldap_ca_server.crt
+    - name: Update cert index
+      ansible.builtin.shell: update-ca-certificates
+    - name: Install a list of packages
+      ansible.builtin.apt:
+        pkg:
+        - sssd-ldap
+        - sssd-tools
+        - ldap-utils
+        - libsss-sudo
+        - libldap-common
+        update_cache: yes
+    - name: Create sssd.conf
+      ansible.builtin.template:
+        src: ./templates/sssd.conf
+        dest: /etc/sssd/sssd.conf
+        mode: '600'
+    - name: Restart SSSD service
+      ansible.builtin.shell: systemctl restart sssd
+    - name: Enable automatic creation of home directories
+      ansible.builtin.shell: pam-auth-update --enable mkhomedir
+    - name: Prevent users from logging in on set time
+      ansible.builtin.blockinfile:
+        block: "account\trequisite\tpam_time.so"
+        path: /etc/pam.d/common-auth
+    - name: Add manual login on LightDM
+      ansible.builtin.blockinfile:
+        block: |
+          [Seat:*]
+          greeter-show-manual-login=true
+          greeter-hide-users=true
+        path: /etc/lightdm/lightdm.conf
+        create: true
+    - name: Reboot machine to apply LightDM new settings
+      ansible.builtin.reboot:
