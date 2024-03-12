@@ -1,7 +1,8 @@
 - Add frontend
 - Automate server and client initial setup with ansible playbook 
   - Server-side
-  - Client-side
+  - Client-side [X]
+- Remove hard coded config
 - Add extra documentation
 - Add database schema
 - Try to find another way of preventing access
