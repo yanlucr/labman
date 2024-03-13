@@ -1,10 +1,10 @@
 ---
 - name: Setup master machines
   vars:
-    hostname: ldap2
+    hostname: ldap
     domain: domain.com
     fqdn: "{{hostname}}.{{domain}}"
-    org_name: Org Name
+    org_name: Org name
     domainDN: "dc=domain,dc=com"
     admin_passwd: admin
   hosts: all
@@ -44,6 +44,8 @@
           - libldap-common
           - gnutls-bin
           - ssl-cert
+          - sssd-ldap
+          - libsss-sudo
         update_cache: yes
     - name: Create admin passwd file
       ansible.builtin.shell: "echo -n {{ admin_passwd }} > /etc/ldapscripts/ldapscripts.passwd"
@@ -112,3 +114,31 @@
         mode: '600'
     - name: Add Root ldif to OpenLDAP
       ansible.builtin.shell: "ldapadd -x -D cn=admin,{{ domainDN }} -y /etc/ldapscripts/ldapscripts.passwd -f /etc/ldap/schema/rootOU.ldif"
+    - name: Install sudo with LDAP support
+      ansible.builtin.apt:
+        name: sudo-ldap
+      environment:
+        SUDO_FORCE_REMOVE: 'yes'
+    - name: Copy sudo schema
+      ansible.builtin.copy:
+        src: /usr/share/doc/sudo-ldap/schema.olcSudo
+        dest: /etc/ldap/schema/
+        mode: '600'
+    - name: Add schema to LDAP
+      ansible.builtin.shell: ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/schema.olcSudo
+    - name: Create Sudoers ldif
+      ansible.builtin.template:
+        src: ./templates/sudoers.ldif
+        dest: /etc/ldap/schema/sudoers.ldif
+        mode: '600'
+    - name: Add sudoers to LDAP
+      ansible.builtin.shell: "ldapadd -x -D cn=admin,{{ domainDN }} -y /etc/ldapscripts/ldapscripts.passwd -f /etc/ldap/schema/sudoers.ldif"
+    - name: Create sssd.conf
+      ansible.builtin.template:
+        src: ./templates/sssd.conf
+        dest: /etc/sssd/sssd.conf
+        mode: '600'
+    - name: Restart SSSD service
+      ansible.builtin.shell: systemctl restart sssd
+    - name: Enable automatic creation of home directories
+      ansible.builtin.shell: pam-auth-update --enable mkhomedir
