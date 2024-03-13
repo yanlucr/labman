@@ -55,6 +55,7 @@
       loop:
         - { insertafter: "#SERVER=", line: "SERVER=\"ldaps://{{ fqdn }}\""  }
         - { insertafter: "#MSUFFIX=", line: "SUFFIX=\"{{ domainDN }}\""  }
+        - { insertafter: "MSUFFIX=", line: "USUFFIX=\"ou=Users\""  }
     - name: Setup ldapscripts 2
       lineinfile:
         path: "/etc/ldapscripts/ldapscripts.conf"
