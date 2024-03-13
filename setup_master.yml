@@ -58,8 +58,11 @@
     - name: Setup ldapscripts 2
       lineinfile:
         path: "/etc/ldapscripts/ldapscripts.conf"
-        regexp: '^PASSWORDGEN='
-        line: PASSWORDGEN="echo %u"
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: "^BINDDN=", line: "BINDDN=\"cn=admin,{{ domainDN }}\"" }
+        - { regexp: '^PASSWORDGEN=', line: PASSWORDGEN="echo %u" }
     - name: Update ldap.conf
       lineinfile:
         dest: "/etc/ldap/ldap.conf"
