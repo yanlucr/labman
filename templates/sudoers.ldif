@@ -1,0 +1,20 @@
+dn: ou=Sudoers,{{ domainDN }}
+objectClass: organizationalUnit
+objectClass: top
+ou: Sudoers
+
+dn: cn=defaults,ou=Sudoers,{{ domainDN }}
+objectClass: sudoRole
+objectClass: top
+cn: defaults
+sudoOption: env_reset
+sudoOption: mail_badpass
+sudoOption: secure_path=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+
+dn: cn=%administrators,ou=Sudoers,{{ domainDN }}
+objectClass: top
+objectClass: sudoRole
+cn: %administrators
+sudoUser: %administrators
+sudoHost: ALL
+sudoCommand: ALL

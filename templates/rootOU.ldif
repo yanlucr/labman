@@ -1,0 +1,12 @@
+dn: ou=Users,{{ domainDN }}
+objectClass: organizationalUnit
+ou: Users
+
+dn: ou=Groups,{{ domainDN }}
+objectClass: organizationalUnit
+ou: Groups
+
+dn: cn=administrators,ou=Groups,{{ domainDN }}
+objectClass: posixGroup
+cn: administrators
+gidNumber: 5000

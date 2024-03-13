@@ -1,0 +1,110 @@
+---
+- name: Setup master machines
+  vars:
+    hostname: ldap2
+    domain: domain.com
+    fqdn: "{{hostname}}.{{domain}}"
+    org_name: Org Name
+    domainDN: "dc=domain,dc=com"
+    admin_passwd: admin
+  hosts: all
+  become: true
+  tasks:
+    - name: Set hostname
+      ansible.builtin.hostname:
+        name: "{{ fqdn }}"
+    - name: Setup hosts file
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1'
+        line: 127.0.1.1 {{ fqdn }} {{ hostname }}
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Setup slapd config
+      ansible.builtin.debconf:
+        name: slapd
+        question: "{{ item.question }}"
+        value: "{{ item.value }}"
+        vtype: "{{ item.vtype }}"
+      loop:
+        - { question: slapd/password1, value: "{{ admin_passwd }}", vtype: password }
+        - { question: slapd/password2, value: "{{ admin_passwd }}", vtype: password }
+        - { question: slapd/no_configuration, value: False, vtype: boolean }
+        - { question: slapd/organization, value: "{{ org_name }}", vtype: text }
+        - { question: slapd/purge_database, value: False, vtype: boolean }
+        - { question: slapd/domain, value: "{{ domain }}", vtype: text }
+        - { question: slapd/move_old_database, value: True, vtype: boolean }
+    - name: Install a list of packages
+      ansible.builtin.apt:
+        pkg:
+          - slapd
+          - ldap-utils
+          - ldapscripts
+          - libldap-common
+          - gnutls-bin
+          - ssl-cert
+        update_cache: yes
+    - name: Create admin passwd file
+      ansible.builtin.shell: "echo -n {{ admin_passwd }} > /etc/ldapscripts/ldapscripts.passwd"
+    - name: Setup ldapscripts 1
+      lineinfile:
+        dest: "/etc/ldapscripts/ldapscripts.conf"
+        insertafter: "{{ item.insertafter }}"
+        line: "{{ item.line }}"
+      loop:
+        - { insertafter: "#SERVER=", line: "SERVER=\"ldaps://{{ fqdn }}\""  }
+        - { insertafter: "#MSUFFIX=", line: "SUFFIX=\"{{ domainDN }}\""  }
+    - name: Setup ldapscripts 2
+      lineinfile:
+        path: "/etc/ldapscripts/ldapscripts.conf"
+        regexp: '^PASSWORDGEN='
+        line: PASSWORDGEN="echo %u"
+    - name: Update ldap.conf
+      lineinfile:
+        dest: "/etc/ldap/ldap.conf"
+        insertafter: '#URI'
+        line: "BASE\t{{ domainDN }}\nURI\tldap://{{ fqdn }}"
+    - name: Generate certificate
+      ansible.builtin.shell: certtool --generate-privkey --bits 4096 --outfile /etc/ssl/private/ldap_ca_key.pem
+    - name: Create Certificate Authority (CA) key template
+      ansible.builtin.template:
+        src: ./templates/ldap_ca.info
+        dest: /etc/ssl/ldap_ca.info
+        mode: '600'
+    - name: Self sign CA template
+      ansible.builtin.shell: certtool --generate-self-signed --load-privkey /etc/ssl/private/ldap_ca_key.pem --template /etc/ssl/ldap_ca.info --outfile /usr/local/share/ca-certificates/ldap_ca_cert.crt
+    - name: Update cert index
+      ansible.builtin.shell: update-ca-certificates
+    - name: Create Private Key
+      ansible.builtin.shell: certtool --generate-privkey --bits 2048 --outfile /etc/ldap/sasl2/ldap_slapd_key.pem
+    - name: Create LDAP Certificate template
+      ansible.builtin.template:
+        src: ./templates/ldap.info
+        dest: /etc/ssl/ldap.info
+        mode: '600'
+    - name: Self sign LDAP Certificate template
+      ansible.builtin.shell: certtool --generate-certificate --load-privkey /etc/ldap/sasl2/ldap_slapd_key.pem --load-ca-certificate /etc/ssl/certs/ldap_ca_cert.pem --load-ca-privkey /etc/ssl/private/ldap_ca_key.pem --template /etc/ssl/ldap.info --outfile /etc/ldap/sasl2/ldap_slapd_cert.pem
+    - name: Change LDAP Certificate permissions
+      ansible.builtin.shell: chown openldap. -R /etc/ldap/sasl2 && chmod 0640 /etc/ldap/sasl2/ldap_slapd_key.pem
+    - name: Create Certificate ldif
+      ansible.builtin.template:
+        src: ./templates/cert.ldif
+        dest: /etc/ldap/schema/cert.ldif
+        mode: '600'
+    - name: Add certs to LDAP
+      ansible.builtin.shell: ldapmodify -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/cert.ldif
+    - name: Restrict unecrypted LDAP traffic
+      lineinfile:
+        dest: "/etc/default/slapd"
+        insertafter: 'SLAPD_SERVICES='
+        line: 'SLAPD_SERVICES="ldap://127.0.1.1/ ldapi:/// ldaps:///"'
+    - name: Restart slapd service
+      ansible.builtin.shell: systemctl restart slapd
+    - name: Create Root ldif
+      ansible.builtin.template:
+        src: ./templates/rootOU.ldif
+        dest: /etc/ldap/schema/rootOU.ldif
+        mode: '600'
+    - name: Add Root ldif to OpenLDAP
+      ansible.builtin.shell: "ldapadd -x -D cn=admin,{{ domainDN }} -y /etc/ldapscripts/ldapscripts.passwd -f /etc/ldap/schema/rootOU.ldif"
