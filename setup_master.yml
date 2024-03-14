@@ -7,7 +7,7 @@
     org_name: Org name
     domainDN: "dc=domain,dc=com"
     admin_passwd: admin
-  hosts: all
+  hosts: this_machine
   become: true
   tasks:
     - name: Set hostname

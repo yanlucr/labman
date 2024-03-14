@@ -1,14 +1,20 @@
 ---
 - name: Setup client machines
-  hosts: all
+  vars:
+    ldap_provider_ip: 10.0.2.15
+    hostname: ldap2
+    domain: domain.com
+    fqdn: "{{hostname}}.{{domain}}"
+    domainDN: "dc=domain,dc=com"
+  hosts: ldap_consumers
   become: true
   tasks:
     - name: Add mapping to /etc/hosts
       ansible.builtin.blockinfile:
-        block: "10.0.2.7\tldap.domain.com"
+        block: "{{ ldap_provider_ip }}\t{{ fqdn }}"
         path: /etc/hosts
     - name: Get certificate from host machine
-      ansible.builtin.shell: echo -n | openssl s_client -connect ldap.domain.com:636 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /usr/local/share/ca-certificates/ldap_ca_server.crt
+      ansible.builtin.shell: "echo -n | openssl s_client -connect {{ fqdn }}:636 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /usr/local/share/ca-certificates/ldap_ca_server.crt"
     - name: Update cert index
       ansible.builtin.shell: update-ca-certificates
     - name: Install a list of packages
