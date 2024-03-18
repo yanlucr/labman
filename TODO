@@ -3,7 +3,7 @@
 - Automate server and client initial setup with ansible playbook [X]
   - Server-side [X]
   - Client-side [X]
-  - Allow non root LDAP operations []
+  - Allow non root LDAP operations [X]
   - Find way to store passwords and usernames for different hosts []
 - Remove hard coded config
 - Add extra documentation
