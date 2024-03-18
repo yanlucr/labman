@@ -66,6 +66,7 @@
       loop:
         - { regexp: "^BINDDN=", line: "BINDDN=\"cn=admin,{{ domainDN }}\"" }
         - { regexp: '^PASSWORDGEN=', line: PASSWORDGEN="echo %u" }
+        - { regexp: '^LOGFILE=', line: "LOGFILE=\"/etc/ldapscripts/ldapscripts.log\"" }
     - name: Update ldap.conf
       lineinfile:
         dest: "/etc/ldap/ldap.conf"
@@ -124,6 +125,7 @@
         src: /usr/share/doc/sudo-ldap/schema.olcSudo
         dest: /etc/ldap/schema/
         mode: '600'
+        remote_src: yes
     - name: Add schema to LDAP
       ansible.builtin.shell: ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/schema.olcSudo
     - name: Create Sudoers ldif
@@ -142,3 +144,5 @@
       ansible.builtin.shell: systemctl restart sssd
     - name: Enable automatic creation of home directories
       ansible.builtin.shell: pam-auth-update --enable mkhomedir
+    - name: Allow non root access to LDAP
+      ansible.builtin.shell: "setfacl -R -m u:{{ ansible_env.SUDO_USER or ansible_user_id }}:rwx /etc/ldapscripts"
