@@ -1,13 +1,8 @@
 ---
-- name: Setup master machines
-  vars:
-    hostname: ldap
-    domain: domain.com
-    fqdn: "{{hostname}}.{{domain}}"
-    org_name: Org name
-    domainDN: "dc=domain,dc=com"
-    admin_passwd: admin
-  hosts: ldap_target
+- name: Setup LDAP provider machines
+  vars_files:
+    - ../common_vars.yml
+  hosts: ldap_providers
   become: true
   tasks:
     - name: Set hostname
@@ -21,7 +16,7 @@
         owner: root
         group: root
         mode: '0644'
-    - name: Setup slapd config
+    - name: Prepare debconf values for slapd install
       ansible.builtin.debconf:
         name: slapd
         question: "{{ item.question }}"
@@ -30,11 +25,11 @@
       loop:
         - { question: slapd/password1, value: "{{ admin_passwd }}", vtype: password }
         - { question: slapd/password2, value: "{{ admin_passwd }}", vtype: password }
-        - { question: slapd/no_configuration, value: False, vtype: boolean }
+        - { question: slapd/no_configuration, value: "false", vtype: boolean }
         - { question: slapd/organization, value: "{{ org_name }}", vtype: text }
-        - { question: slapd/purge_database, value: False, vtype: boolean }
+        - { question: slapd/purge_database, value: "false", vtype: boolean }
         - { question: slapd/domain, value: "{{ domain }}", vtype: text }
-        - { question: slapd/move_old_database, value: True, vtype: boolean }
+        - { question: slapd/move_old_database, value: "true", vtype: boolean }
     - name: Install a list of packages
       ansible.builtin.apt:
         pkg:
@@ -94,8 +89,17 @@
         mode: '600'
     - name: Self sign LDAP Certificate template
       ansible.builtin.shell: certtool --generate-certificate --load-privkey /etc/ldap/sasl2/ldap_slapd_key.pem --load-ca-certificate /etc/ssl/certs/ldap_ca_cert.pem --load-ca-privkey /etc/ssl/private/ldap_ca_key.pem --template /etc/ssl/ldap.info --outfile /etc/ldap/sasl2/ldap_slapd_cert.pem
+    - name: Change ownership of sasl2 directory
+      ansible.builtin.file:
+        path: /etc/ldap/sasl2
+        state: directory
+        recurse: yes
+        owner: openldap
+        group: openldap
     - name: Change LDAP Certificate permissions
-      ansible.builtin.shell: chown openldap. -R /etc/ldap/sasl2 && chmod 0640 /etc/ldap/sasl2/ldap_slapd_key.pem
+      ansible.builtin.file:
+        path: /etc/ldap/sasl2/ldap_slapd_key.pem
+        mode: '0640'
     - name: Create Certificate ldif
       ansible.builtin.template:
         src: ../templates/cert.ldif

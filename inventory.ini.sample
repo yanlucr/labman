@@ -1,4 +1,4 @@
-[ldap_target]
+[ldap_providers]
 host1 ansible_user=user1 ansible_become_password=pass1
 
 [ldap_consumers]

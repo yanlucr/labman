@@ -1,0 +1,12 @@
+# LDAP provider configuration
+hostname: ldap
+domain: domain.com
+fqdn: "{{hostname}}.{{domain}}" # DO NOT CHANGE THIS
+domainDN: "dc=domain,dc=com" # Change according to value set in domain
+org_name: Org name
+
+# Default LDAP admin account password
+admin_passwd: admin
+
+# Static IP of LDAP provider machine
+ldap_provider_ip: 127.0.0.1

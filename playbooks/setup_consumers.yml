@@ -1,11 +1,7 @@
 ---
-- name: Setup client machines
-  vars:
-    ldap_provider_ip: 10.0.2.15
-    hostname: ldap
-    domain: domain.com
-    fqdn: "{{hostname}}.{{domain}}"
-    domainDN: "dc=domain,dc=com"
+- name: Setup LDAP consumer machines
+  vars_files:
+    - ../common_vars.yml
   hosts: ldap_consumers
   become: true
   tasks:
