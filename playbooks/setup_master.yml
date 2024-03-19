@@ -7,7 +7,7 @@
     org_name: Org name
     domainDN: "dc=domain,dc=com"
     admin_passwd: admin
-  hosts: localhost
+  hosts: ldap_target
   become: true
   tasks:
     - name: Set hostname
@@ -42,6 +42,7 @@
           - ldap-utils
           - ldapscripts
           - libldap-common
+          - sqlite3
           - gnutls-bin
           - ssl-cert
           - sssd-ldap
