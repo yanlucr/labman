@@ -76,7 +76,7 @@
       ansible.builtin.shell: certtool --generate-privkey --bits 4096 --outfile /etc/ssl/private/ldap_ca_key.pem
     - name: Create Certificate Authority (CA) key template
       ansible.builtin.template:
-        src: ./templates/ldap_ca.info
+        src: ../templates/ldap_ca.info
         dest: /etc/ssl/ldap_ca.info
         mode: '600'
     - name: Self sign CA template
@@ -87,7 +87,7 @@
       ansible.builtin.shell: certtool --generate-privkey --bits 2048 --outfile /etc/ldap/sasl2/ldap_slapd_key.pem
     - name: Create LDAP Certificate template
       ansible.builtin.template:
-        src: ./templates/ldap.info
+        src: ../templates/ldap.info
         dest: /etc/ssl/ldap.info
         mode: '600'
     - name: Self sign LDAP Certificate template
@@ -96,7 +96,7 @@
       ansible.builtin.shell: chown openldap. -R /etc/ldap/sasl2 && chmod 0640 /etc/ldap/sasl2/ldap_slapd_key.pem
     - name: Create Certificate ldif
       ansible.builtin.template:
-        src: ./templates/cert.ldif
+        src: ../templates/cert.ldif
         dest: /etc/ldap/schema/cert.ldif
         mode: '600'
     - name: Add certs to LDAP
@@ -110,7 +110,7 @@
       ansible.builtin.shell: systemctl restart slapd
     - name: Create Root ldif
       ansible.builtin.template:
-        src: ./templates/rootOU.ldif
+        src: ../templates/rootOU.ldif
         dest: /etc/ldap/schema/rootOU.ldif
         mode: '600'
     - name: Add Root ldif to OpenLDAP
@@ -130,14 +130,14 @@
       ansible.builtin.shell: ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/ldap/schema/schema.olcSudo
     - name: Create Sudoers ldif
       ansible.builtin.template:
-        src: ./templates/sudoers.ldif
+        src: ../templates/sudoers.ldif
         dest: /etc/ldap/schema/sudoers.ldif
         mode: '600'
     - name: Add sudoers to LDAP
       ansible.builtin.shell: "ldapadd -x -D cn=admin,{{ domainDN }} -y /etc/ldapscripts/ldapscripts.passwd -f /etc/ldap/schema/sudoers.ldif"
     - name: Create sssd.conf
       ansible.builtin.template:
-        src: ./templates/sssd.conf
+        src: ../templates/sssd.conf
         dest: /etc/sssd/sssd.conf
         mode: '600'
     - name: Restart SSSD service

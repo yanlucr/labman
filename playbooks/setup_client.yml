@@ -28,7 +28,7 @@
         update_cache: yes
     - name: Create sssd.conf
       ansible.builtin.template:
-        src: ./templates/sssd.conf
+        src: ../templates/sssd.conf
         dest: /etc/sssd/sssd.conf
         mode: '600'
     - name: Restart SSSD service

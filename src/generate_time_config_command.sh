@@ -46,5 +46,5 @@ if [[ $print ]]; then
 fi
 
 if [[ $sync ]]; then
-    ansible-playbook --ask-become-pass sync_time_conf.yml
+    ansible-playbook --ask-become-pass playbooks/sync_time_conf.yml
 fi
