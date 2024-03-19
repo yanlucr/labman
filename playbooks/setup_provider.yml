@@ -1,8 +1,8 @@
 ---
-- name: Setup LDAP provider machines
+- name: Setup LDAP provider machine
   vars_files:
     - ../common_vars.yml
-  hosts: ldap_providers
+  hosts: localhost
   become: true
   tasks:
     - name: Set hostname
