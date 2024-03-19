@@ -4,7 +4,7 @@
   - Server-side [X]
   - Client-side [X]
   - Allow non root LDAP operations [X]
-  - Find way to store passwords and usernames for different hosts []
+  - Find way to store passwords and usernames for different hosts [X]
 - Remove hard coded config
 - Add extra documentation
 - Add database schema
