@@ -2,17 +2,17 @@ name: labman
 help: Access Management application
 version: 0.1.0
 
-dependencies:
-  ldapadduser: install ldapscripts
-  sqlite3:
-
 commands:
-- name: initialize_db
-  help: Setup database with default tables
+- name: init
+  help: Run initial setup
 
 - name: add
   alias: create
   help: Add new object
+  dependencies:
+    labman-utils:
+      command: [ldapadduser, sqlite3]
+      help: Run init command
 
   commands:
   - name: user
@@ -37,6 +37,10 @@ commands:
 - name: remove
   alias: delete
   help: Remove object
+  dependencies:
+    labman-utils:
+      command: [ldapadduser, sqlite3]
+      help: Run init command
 
   commands:
   - name: user
@@ -60,6 +64,10 @@ commands:
 
 - name: addusertogroup
   help: Add user to group
+  dependencies:
+    labman-utils:
+      command: [ldapadduser, sqlite3]
+      help: Run init command
   args:
   - name: user
     help: User to be added to group
@@ -69,6 +77,10 @@ commands:
     required: true
 - name: removeuserfromgroup
   help: Remove user from group
+  dependencies:
+    labman-utils:
+      command: [ldapadduser, sqlite3]
+      help: Run init command
   args:
   - name: user
     help: User to be removed from group
@@ -79,6 +91,10 @@ commands:
 
 - name: addusertodiscipline
   help: Add user to discipline
+  dependencies:
+    labman-utils:
+      command: [ldapadduser, sqlite3]
+      help: Run init command
   args:
   - name: user
     help: User to be added to discipline
@@ -88,6 +104,10 @@ commands:
     required: true
 - name: removeuserfromdiscipline
   help: Remove user from discipline
+  dependencies:
+    labman-utils:
+      command: [ldapadduser, sqlite3]
+      help: Run init command
   args:
   - name: user
     help: User to be removed from discipline
@@ -98,6 +118,10 @@ commands:
 
 - name: set_allowedtime
   help: Set allowed time for users or disciplines
+  dependencies:
+    labman-utils:
+      command: [ldapadduser, sqlite3]
+      help: Run init command
   commands:
   - name: user
     help: Set allowed time for users
@@ -120,6 +144,10 @@ commands:
 
 - name: generate_time_config
   help: Generate time.conf settings based on database entries
+  dependencies:
+    labman-utils:
+      command: [ldapadduser, sqlite3]
+      help: Run init command
   flags:
   - long: --print
     short: -p

@@ -34,7 +34,7 @@ labman_usage() {
   echo
   # :command.usage_commands
   printf "%s\n" "Commands:"
-  printf "  %s   Setup database with default tables\n" "initialize_db           "
+  printf "  %s   Run initial setup\n" "init                    "
   printf "  %s   Add new object\n" "add                     "
   printf "  %s   Remove object\n" "remove                  "
   printf "  %s   Add user to group\n" "addusertogroup          "
@@ -61,20 +61,20 @@ labman_usage() {
 }
 
 # :command.usage
-labman_initialize_db_usage() {
+labman_init_usage() {
   if [[ -n $long_usage ]]; then
-    printf "labman initialize_db - Setup database with default tables\n"
+    printf "labman init - Run initial setup\n"
     echo
 
   else
-    printf "labman initialize_db - Setup database with default tables\n"
+    printf "labman init - Run initial setup\n"
     echo
 
   fi
 
   printf "%s\n" "Usage:"
-  printf "  labman initialize_db\n"
-  printf "  labman initialize_db --help | -h\n"
+  printf "  labman init\n"
+  printf "  labman init --help | -h\n"
   echo
 
   # :command.long_usage
@@ -884,8 +884,12 @@ set_user_allowedtime() {
 
 # :command.command_functions
 # :command.function
-labman_initialize_db_command() {
-  # src/initialize_db_command.sh
+labman_init_command() {
+  # src/init_command.sh
+  echo "Running LDAP setup"
+  sudo ansible-playbook -b playbooks/setup_provider.yml
+
+  echo "Initializing Database"
   initialize_database
 }
 
@@ -1101,18 +1105,11 @@ parse_requirements() {
   done
 
   # :command.dependencies_filter
-  if command -v ldapadduser >/dev/null 2>&1; then
-    deps['ldapadduser']="$(command -v ldapadduser | head -n1)"
+  if command -v ldapadduser sqlite3 >/dev/null 2>&1; then
+    deps['labman-utils']="$(command -v ldapadduser sqlite3 | head -n1)"
   else
-    printf "missing dependency: ldapadduser\n" >&2
-    printf "%s\n" "install ldapscripts" >&2
-    exit 1
-  fi
-
-  if command -v sqlite3 >/dev/null 2>&1; then
-    deps['sqlite3']="$(command -v sqlite3 | head -n1)"
-  else
-    printf "missing dependency: sqlite3\n" >&2
+    printf "missing dependency: labman-utils (ldapadduser/sqlite3)\n" >&2
+    printf "%s\n" "Run init command" >&2
     exit 1
   fi
 
@@ -1122,10 +1119,10 @@ parse_requirements() {
   case $action in
     -*) ;;
 
-    initialize_db)
-      action="initialize_db"
+    init)
+      action="init"
       shift
-      labman_initialize_db_parse_requirements "$@"
+      labman_init_parse_requirements "$@"
       shift $#
       ;;
 
@@ -1222,13 +1219,13 @@ parse_requirements() {
 }
 
 # :command.parse_requirements
-labman_initialize_db_parse_requirements() {
+labman_init_parse_requirements() {
   # :command.fixed_flags_filter
   while [[ $# -gt 0 ]]; do
     case "${1:-}" in
       --help | -h)
         long_usage=yes
-        labman_initialize_db_usage
+        labman_init_usage
         exit
         ;;
 
@@ -1240,7 +1237,7 @@ labman_initialize_db_parse_requirements() {
   done
 
   # :command.command_filter
-  action="initialize_db"
+  action="init"
 
   # :command.parse_requirements_while
   while [[ $# -gt 0 ]]; do
@@ -2281,7 +2278,7 @@ run() {
   parse_requirements "${input[@]}"
 
   case "$action" in
-    "initialize_db") labman_initialize_db_command ;;
+    "init") labman_init_command ;;
     "add") labman_add_command ;;
     "add user") labman_add_user_command ;;
     "add group") labman_add_group_command ;;
