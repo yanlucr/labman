@@ -35,6 +35,7 @@ labman_usage() {
   # :command.usage_commands
   printf "%s\n" "Commands:"
   printf "  %s   Run initial setup\n" "init                    "
+  printf "  %s   Initalize consumers\n" "init_consumers          "
   printf "  %s   Add new object\n" "add                     "
   printf "  %s   Remove object\n" "remove                  "
   printf "  %s   Add user to group\n" "addusertogroup          "
@@ -73,12 +74,8 @@ labman_init_usage() {
   fi
 
   printf "%s\n" "Usage:"
-  printf "  labman init COMMAND\n"
-  printf "  labman init [COMMAND] --help | -h\n"
-  echo
-  # :command.usage_commands
-  printf "%s\n" "Commands:"
-  printf "  %s   Initalize consumers\n" "consumers"
+  printf "  labman init\n"
+  printf "  labman init --help | -h\n"
   echo
 
   # :command.long_usage
@@ -96,18 +93,18 @@ labman_init_usage() {
 # :command.usage
 labman_init_consumers_usage() {
   if [[ -n $long_usage ]]; then
-    printf "labman init consumers - Initalize consumers\n"
+    printf "labman init_consumers - Initalize consumers\n"
     echo
 
   else
-    printf "labman init consumers - Initalize consumers\n"
+    printf "labman init_consumers - Initalize consumers\n"
     echo
 
   fi
 
   printf "%s\n" "Usage:"
-  printf "  labman init consumers\n"
-  printf "  labman init consumers --help | -h\n"
+  printf "  labman init_consumers\n"
+  printf "  labman init_consumers --help | -h\n"
   echo
 
   # :command.long_usage
@@ -916,6 +913,29 @@ set_user_allowedtime() {
 }
 
 # :command.command_functions
+# :command.function
+labman_init_command() {
+  # src/init_command.sh
+  echo "Checking required files"
+
+  if [ ! -f "inventory.ini" ]; then
+      echo "inventory.ini does not exist, try copying from the provided sample file and adjusting it."
+      exit 1
+  fi
+
+  if [ ! -f "common_vars.yml" ]; then
+      echo "common_vars.yml does not exist, try copying from the provided sample file and adjusting it."
+      exit 1
+  fi
+
+  echo "Running LDAP setup from ansible"
+  sudo ansible-playbook -b playbooks/setup_provider.yml
+
+  echo "Initializing labman database"
+  initialize_database
+
+  echo "All done!"
+}
 
 # :command.function
 labman_init_consumers_command() {
@@ -1149,6 +1169,13 @@ parse_requirements() {
       shift $#
       ;;
 
+    init_consumers)
+      action="init_consumers"
+      shift
+      labman_init_consumers_parse_requirements "$@"
+      shift $#
+      ;;
+
     add | create)
       action="add"
       shift
@@ -1268,30 +1295,7 @@ labman_init_parse_requirements() {
   fi
 
   # :command.command_filter
-  action=${1:-}
-
-  case $action in
-    -*) ;;
-
-    consumers)
-      action="consumers"
-      shift
-      labman_init_consumers_parse_requirements "$@"
-      shift $#
-      ;;
-
-    # :command.command_fallback
-    "")
-      labman_init_usage >&2
-      exit 1
-      ;;
-
-    *)
-      printf "invalid command: %s\n" "$action" >&2
-      exit 1
-      ;;
-
-  esac
+  action="init"
 
   # :command.parse_requirements_while
   while [[ $# -gt 0 ]]; do
@@ -1344,7 +1348,7 @@ labman_init_consumers_parse_requirements() {
   fi
 
   # :command.command_filter
-  action="init consumers"
+  action="init_consumers"
 
   # :command.parse_requirements_while
   while [[ $# -gt 0 ]]; do
@@ -2458,7 +2462,7 @@ run() {
 
   case "$action" in
     "init") labman_init_command ;;
-    "init consumers") labman_init_consumers_command ;;
+    "init_consumers") labman_init_consumers_command ;;
     "add") labman_add_command ;;
     "add user") labman_add_user_command ;;
     "add group") labman_add_group_command ;;
