@@ -5,7 +5,7 @@
   - Client-side [X]
   - Allow non root LDAP operations [X]
   - Find way to store passwords and usernames for different hosts [X]
-- Remove hard coded config
+- Remove hard coded config [X]
 - Add extra documentation
 - Add database schema
 - Try to find another way of preventing access

@@ -28,5 +28,6 @@ We are now able to run most labman commands and we are ready to proceed to LDAP 
 1. Open up **inventory.ini**
 2. Add as many hosts as you want below the `[ldap_consumers]` header, following the sample file example
     > **ansible_user** and **ansible_become_password** refers to both the **username** and **password** of an user with administrative access in the corresponding host
-3. Run `./labman init consumers`
+3. Run `./labman init_consumers`
 4. The consumer machines should have rebooted to allow the changes made in LightDM to appear
+5. You should now be able to login with any user created via labman or ldapscripts
