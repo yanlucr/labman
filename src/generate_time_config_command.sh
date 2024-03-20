@@ -25,7 +25,7 @@ generate_time_conf() {
         discipline=${arr[0]}
         allowedtime=${arr[1]}
 
-        for user in $(get_users_with_no_explicit_allowedtime); do
+        for user in $(get_users_with_no_explicit_allowedtime $discipline); do
             echo -e "\n*;*;$user;$allowedtime" >> time.conf
         done
     done
