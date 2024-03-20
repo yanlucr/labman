@@ -11,7 +11,7 @@ generate_time_conf() {
         rules=${arr[1]}
 
         for extra_rule in $(get_user_allowedtime_from_disciplines $user); do
-            rules="$rules|$extra_rule"
+            rules="$extra_rule|$rules"
         done
 
         echo -e "\n*;*;$user;$rules" >> time.conf
@@ -46,5 +46,5 @@ if [[ $print ]]; then
 fi
 
 if [[ $sync ]]; then
-    ansible-playbook --ask-become-pass playbooks/sync_time_conf.yml
+    ansible-playbook playbooks/sync_time_conf.yml
 fi

@@ -43,6 +43,7 @@ labman_usage() {
   printf "  %s   Add user to discipline\n" "addusertodiscipline     "
   printf "  %s   Remove user from discipline\n" "removeuserfromdiscipline"
   printf "  %s   Set allowed time for users or disciplines\n" "set_allowedtime         "
+  printf "  %s   Clear allowed time for users or disciplines\n" "clear_allowedtime       "
   printf "  %s   Generate time.conf settings based on database entries\n" "generate_time_config    "
   echo
 
@@ -632,7 +633,7 @@ labman_set_allowedtime_user_usage() {
   fi
 
   printf "%s\n" "Usage:"
-  printf "  labman set_allowedtime user USER ALLOWEDTIME\n"
+  printf "  labman set_allowedtime user USER ALLOWEDTIME [ALLOWEDDAYS]\n"
   printf "  labman set_allowedtime user --help | -h\n"
   echo
 
@@ -658,6 +659,11 @@ labman_set_allowedtime_user_usage() {
     printf "    Allowed time for user\n"
     echo
 
+    # :argument.usage
+    printf "  %s\n" "ALLOWEDDAYS"
+    printf "    Allowed days\n"
+    echo
+
   fi
 }
 
@@ -674,7 +680,7 @@ labman_set_allowedtime_discipline_usage() {
   fi
 
   printf "%s\n" "Usage:"
-  printf "  labman set_allowedtime discipline DISCIPLINE ALLOWEDTIME\n"
+  printf "  labman set_allowedtime discipline DISCIPLINE ALLOWEDTIME [ALLOWEDDAYS]\n"
   printf "  labman set_allowedtime discipline --help | -h\n"
   echo
 
@@ -698,6 +704,119 @@ labman_set_allowedtime_discipline_usage() {
     # :argument.usage
     printf "  %s\n" "ALLOWEDTIME"
     printf "    Allowed time for discipline\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "ALLOWEDDAYS"
+    printf "    Allowed days\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+labman_clear_allowedtime_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "labman clear_allowedtime - Clear allowed time for users or disciplines\n"
+    echo
+
+  else
+    printf "labman clear_allowedtime - Clear allowed time for users or disciplines\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  labman clear_allowedtime COMMAND\n"
+  printf "  labman clear_allowedtime [COMMAND] --help | -h\n"
+  echo
+  # :command.usage_commands
+  printf "%s\n" "Commands:"
+  printf "  %s   Set allowed time for users\n" "user      "
+  printf "  %s   Set allowed time for disciplines\n" "discipline"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+labman_clear_allowedtime_user_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "labman clear_allowedtime user - Set allowed time for users\n"
+    echo
+
+  else
+    printf "labman clear_allowedtime user - Set allowed time for users\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  labman clear_allowedtime user USER\n"
+  printf "  labman clear_allowedtime user --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "USER"
+    printf "    Affected user\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+labman_clear_allowedtime_discipline_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "labman clear_allowedtime discipline - Set allowed time for disciplines\n"
+    echo
+
+  else
+    printf "labman clear_allowedtime discipline - Set allowed time for disciplines\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  labman clear_allowedtime discipline DISCIPLINE\n"
+  printf "  labman clear_allowedtime discipline --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "DISCIPLINE"
+    printf "    Affected discipline\n"
     echo
 
   fi
@@ -822,8 +941,16 @@ get_user_allowedtime_from_disciplines() {
   sqlite3 labman.db "select allowedtime from discipline_allowedtime da join discipline_user du on da.discipline=du.discipline where username='$1';"
 }
 
+clear_user_allowedtime() {
+  sqlite3 labman.db "delete from user_allowedtime where username='$1'"
+}
+
 get_disciplines_allowedtime() {
   sqlite3 labman.db "select * from discipline_allowedtime;"
+}
+
+clear_discipline_allowedtime() {
+  sqlite3 labman.db "delete from discipline_allowedtime where discipline='$1'"
 }
 
 # src/lib/database.sh
@@ -873,18 +1000,38 @@ remove_group() {
 # src/lib/parsers.sh
 parse_allowedtime() {
     local allowedtime="$1"
+    local alloweddays="$2"
 
-    if [ "$allowedtime" = "always" ]; then
-        allowedtime="Al0000-2400"
-    elif [ "$allowedtime" = "never" ]; then
-        allowedtime="!Al0000-2400"
-    elif [[ "$allowedtime" =~ ^[0-9]{4}-[0-9]{4}$ ]]; then
-        allowedtime="Al$allowedtime"
+    local result="$allowedtime"
+    if [[ ! "$allowedtime" =~ ^(always|never|[0-9]{4}-[0-9]{4})$ ]]; then
+        result="ERROR"
     else
-        allowedtime="ERROR"
+        if [ "$allowedtime" = "always" ] || [ "$allowedtime" = "never" ]; then
+            result="0000-2400"
+        fi
+
+        if [[ $alloweddays ]]; then
+            result="$alloweddays$result"
+        else
+            result="Al$result"
+        fi
+
+        if [ "$allowedtime" = "never" ]; then
+            result="!$result"
+        fi
     fi
 
-    echo $allowedtime
+    echo $result
+}
+
+parse_alloweddays() {
+    local alloweddays="$1"
+
+    if [[ ! "$alloweddays" =~ ^(Mo|Tu|We|Th|Fr|Sa|Su|Wk|Wd|Al)*$ ]]; then
+        alloweddays="ERROR"
+    fi
+
+    echo $alloweddays
 }
 
 # src/lib/users.sh
@@ -1049,15 +1196,29 @@ labman_set_allowedtime_user_command() {
   # src/set_allowedtime_user_command.sh
   user=${args[user]}
   allowedtime=${args[allowedtime]}
-  parsed_allowedtime=$(parse_allowedtime $allowedtime)
+  alloweddays=${args[alloweddays]}
+
+  if [ "$(parse_alloweddays $alloweddays)" == "ERROR" ]; then
+      echo "Wrong alloweddays format: $alloweddays"
+      echo "Try combinations of these instead: Mo Tu We Th Fr Sa Su Wk Wd Al"
+      echo "Read more in the 'time.conf' man page"
+      exit 1
+  fi
+
+  parsed_allowedtime=$(parse_allowedtime $allowedtime $alloweddays)
 
   if [ "$parsed_allowedtime" != "ERROR" ]; then
       set_user_allowedtime $user $parsed_allowedtime
 
-      echo "Successfully set user $user allowed time to $allowedtime"
+      if [[ $alloweddays ]]; then
+          echo "Successfully set user $user allowed time to $allowedtime on $alloweddays"
+      else
+          echo "Successfully set user $user allowed time to $allowedtime everyday"
+      fi
   else
       echo "Wrong allowedtime format: $allowedtime"
       echo "Try these instead: always, never, 0800-1600(START-END)"
+      exit 1
   fi
 }
 
@@ -1066,16 +1227,50 @@ labman_set_allowedtime_discipline_command() {
   # src/set_allowedtime_discipline_command.sh
   discipline=${args[discipline]}
   allowedtime=${args[allowedtime]}
-  parsed_allowedtime=$(parse_allowedtime $allowedtime)
+  alloweddays=${args[alloweddays]}
+
+  if [ "$(parse_alloweddays $alloweddays)" == "ERROR" ]; then
+      echo "Wrong alloweddays format: $alloweddays"
+      echo "Try combinations of these instead: Mo Tu We Th Fr Sa Su Wk Wd Al"
+      echo "Read more in the 'time.conf' man page"
+      exit 1
+  fi
+
+  parsed_allowedtime=$(parse_allowedtime $allowedtime $alloweddays)
 
   if [ "$parsed_allowedtime" != "ERROR" ]; then
       set_discipline_allowedtime $discipline $parsed_allowedtime
 
-      echo "Successfully set discipline $discipline allowed time to $allowedtime"
+      if [[ $alloweddays ]]; then
+          echo "Successfully set discipline $discipline allowed time to $allowedtime on $alloweddays"
+      else
+          echo "Successfully set discipline $discipline allowed time to $allowedtime everyday"
+      fi
   else
       echo "Wrong allowedtime format: $allowedtime"
       echo "Try these instead: always, never, 0800-1600(START-END)"
+      exit 1
   fi
+}
+
+# :command.function
+labman_clear_allowedtime_user_command() {
+  # src/clear_allowedtime_user_command.sh
+  user=${args[user]}
+
+  clear_user_allowedtime $user
+
+  echo "Cleared user $user allowed time"
+}
+
+# :command.function
+labman_clear_allowedtime_discipline_command() {
+  # src/clear_allowedtime_discipline_command.sh
+  discipline=${args[discipline]}
+
+  clear_discipline_allowedtime $discipline
+
+  echo "Cleared discipline $discipline allowed time"
 }
 
 # :command.function
@@ -1094,7 +1289,7 @@ labman_generate_time_config_command() {
           rules=${arr[1]}
 
           for extra_rule in $(get_user_allowedtime_from_disciplines $user); do
-              rules="$rules|$extra_rule"
+              rules="$extra_rule|$rules"
           done
 
           echo -e "\n*;*;$user;$rules" >> time.conf
@@ -1129,7 +1324,7 @@ labman_generate_time_config_command() {
   fi
 
   if [[ $sync ]]; then
-      ansible-playbook --ask-become-pass playbooks/sync_time_conf.yml
+      ansible-playbook playbooks/sync_time_conf.yml
   fi
 }
 
@@ -1222,6 +1417,13 @@ parse_requirements() {
       action="set_allowedtime"
       shift
       labman_set_allowedtime_parse_requirements "$@"
+      shift $#
+      ;;
+
+    clear_allowedtime)
+      action="clear_allowedtime"
+      shift
+      labman_clear_allowedtime_parse_requirements "$@"
       shift $#
       ;;
 
@@ -2290,6 +2492,9 @@ labman_set_allowedtime_user_parse_requirements() {
         elif [[ -z ${args['allowedtime']+x} ]]; then
           args['allowedtime']=$1
           shift
+        elif [[ -z ${args['alloweddays']+x} ]]; then
+          args['alloweddays']=$1
+          shift
         else
           printf "invalid argument: %s\n" "$key" >&2
           exit 1
@@ -2302,11 +2507,11 @@ labman_set_allowedtime_user_parse_requirements() {
 
   # :command.required_args_filter
   if [[ -z ${args['user']+x} ]]; then
-    printf "missing required argument: USER\nusage: labman set_allowedtime user USER ALLOWEDTIME\n" >&2
+    printf "missing required argument: USER\nusage: labman set_allowedtime user USER ALLOWEDTIME [ALLOWEDDAYS]\n" >&2
     exit 1
   fi
   if [[ -z ${args['allowedtime']+x} ]]; then
-    printf "missing required argument: ALLOWEDTIME\nusage: labman set_allowedtime user USER ALLOWEDTIME\n" >&2
+    printf "missing required argument: ALLOWEDTIME\nusage: labman set_allowedtime user USER ALLOWEDTIME [ALLOWEDDAYS]\n" >&2
     exit 1
   fi
 
@@ -2352,6 +2557,9 @@ labman_set_allowedtime_discipline_parse_requirements() {
         elif [[ -z ${args['allowedtime']+x} ]]; then
           args['allowedtime']=$1
           shift
+        elif [[ -z ${args['alloweddays']+x} ]]; then
+          args['alloweddays']=$1
+          shift
         else
           printf "invalid argument: %s\n" "$key" >&2
           exit 1
@@ -2364,11 +2572,204 @@ labman_set_allowedtime_discipline_parse_requirements() {
 
   # :command.required_args_filter
   if [[ -z ${args['discipline']+x} ]]; then
-    printf "missing required argument: DISCIPLINE\nusage: labman set_allowedtime discipline DISCIPLINE ALLOWEDTIME\n" >&2
+    printf "missing required argument: DISCIPLINE\nusage: labman set_allowedtime discipline DISCIPLINE ALLOWEDTIME [ALLOWEDDAYS]\n" >&2
     exit 1
   fi
   if [[ -z ${args['allowedtime']+x} ]]; then
-    printf "missing required argument: ALLOWEDTIME\nusage: labman set_allowedtime discipline DISCIPLINE ALLOWEDTIME\n" >&2
+    printf "missing required argument: ALLOWEDTIME\nusage: labman set_allowedtime discipline DISCIPLINE ALLOWEDTIME [ALLOWEDDAYS]\n" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
+labman_clear_allowedtime_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        labman_clear_allowedtime_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.dependencies_filter
+  if command -v ldapadduser sqlite3 >/dev/null 2>&1; then
+    deps['labman-utils']="$(command -v ldapadduser sqlite3 | head -n1)"
+  else
+    printf "missing dependency: labman-utils (ldapadduser/sqlite3)\n" >&2
+    printf "%s\n" "Run init command" >&2
+    exit 1
+  fi
+
+  # :command.command_filter
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    user)
+      action="user"
+      shift
+      labman_clear_allowedtime_user_parse_requirements "$@"
+      shift $#
+      ;;
+
+    discipline)
+      action="discipline"
+      shift
+      labman_clear_allowedtime_discipline_parse_requirements "$@"
+      shift $#
+      ;;
+
+    # :command.command_fallback
+    "")
+      labman_clear_allowedtime_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+# :command.parse_requirements
+labman_clear_allowedtime_user_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        labman_clear_allowedtime_user_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="clear_allowedtime user"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        if [[ -z ${args['user']+x} ]]; then
+          args['user']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_args_filter
+  if [[ -z ${args['user']+x} ]]; then
+    printf "missing required argument: USER\nusage: labman clear_allowedtime user USER\n" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
+labman_clear_allowedtime_discipline_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        labman_clear_allowedtime_discipline_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="clear_allowedtime discipline"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        if [[ -z ${args['discipline']+x} ]]; then
+          args['discipline']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_args_filter
+  if [[ -z ${args['discipline']+x} ]]; then
+    printf "missing required argument: DISCIPLINE\nusage: labman clear_allowedtime discipline DISCIPLINE\n" >&2
     exit 1
   fi
 
@@ -2478,6 +2879,9 @@ run() {
     "set_allowedtime") labman_set_allowedtime_command ;;
     "set_allowedtime user") labman_set_allowedtime_user_command ;;
     "set_allowedtime discipline") labman_set_allowedtime_discipline_command ;;
+    "clear_allowedtime") labman_clear_allowedtime_command ;;
+    "clear_allowedtime user") labman_clear_allowedtime_user_command ;;
+    "clear_allowedtime discipline") labman_clear_allowedtime_discipline_command ;;
     "generate_time_config") labman_generate_time_config_command ;;
   esac
 }

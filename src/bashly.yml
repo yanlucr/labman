@@ -140,6 +140,8 @@ commands:
     - name: allowedtime
       help: Allowed time for user
       required: true
+    - name: alloweddays
+      help: Allowed days
   - name: discipline
     help: Set allowed time for disciplines
     args:
@@ -148,6 +150,28 @@ commands:
       required: true
     - name: allowedtime
       help: Allowed time for discipline
+      required: true
+    - name: alloweddays
+      help: Allowed days
+
+- name: clear_allowedtime
+  help: Clear allowed time for users or disciplines
+  dependencies:
+    labman-utils:
+      command: [ldapadduser, sqlite3]
+      help: Run init command
+  commands:
+  - name: user
+    help: Set allowed time for users
+    args:
+    - name: user
+      help: Affected user
+      required: true
+  - name: discipline
+    help: Set allowed time for disciplines
+    args:
+    - name: discipline
+      help: Affected discipline
       required: true
 
 - name: generate_time_config
