@@ -5,6 +5,8 @@ version: 0.1.0
 commands:
 - name: init
   help: Run initial setup
+  dependencies:
+    ansible:
 
 - name: add
   alias: create

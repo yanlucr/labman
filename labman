@@ -886,11 +886,25 @@ set_user_allowedtime() {
 # :command.function
 labman_init_command() {
   # src/init_command.sh
-  echo "Running LDAP setup"
+  echo "Checking required files"
+
+  if [ ! -f "inventory.ini" ]; then
+      echo "inventory.ini does not exist, try copying from the provided sample file and adjusting it."
+      exit 1
+  fi
+
+  if [ ! -f "common_vars.yml" ]; then
+      echo "common_vars.yml does not exist, try copying from the provided sample file and adjusting it."
+      exit 1
+  fi
+
+  echo "Running LDAP setup from ansible"
   sudo ansible-playbook -b playbooks/setup_provider.yml
 
-  echo "Initializing Database"
+  echo "Initializing labman database"
   initialize_database
+
+  echo "All done!"
 }
 
 # :command.function
@@ -1104,15 +1118,6 @@ parse_requirements() {
     esac
   done
 
-  # :command.dependencies_filter
-  if command -v ldapadduser sqlite3 >/dev/null 2>&1; then
-    deps['labman-utils']="$(command -v ldapadduser sqlite3 | head -n1)"
-  else
-    printf "missing dependency: labman-utils (ldapadduser/sqlite3)\n" >&2
-    printf "%s\n" "Run init command" >&2
-    exit 1
-  fi
-
   # :command.command_filter
   action=${1:-}
 
@@ -1236,6 +1241,14 @@ labman_init_parse_requirements() {
     esac
   done
 
+  # :command.dependencies_filter
+  if command -v ansible >/dev/null 2>&1; then
+    deps['ansible']="$(command -v ansible | head -n1)"
+  else
+    printf "missing dependency: ansible\n" >&2
+    exit 1
+  fi
+
   # :command.command_filter
   action="init"
 
@@ -1279,6 +1292,15 @@ labman_add_parse_requirements() {
 
     esac
   done
+
+  # :command.dependencies_filter
+  if command -v ldapadduser sqlite3 >/dev/null 2>&1; then
+    deps['labman-utils']="$(command -v ldapadduser sqlite3 | head -n1)"
+  else
+    printf "missing dependency: labman-utils (ldapadduser/sqlite3)\n" >&2
+    printf "%s\n" "Run init command" >&2
+    exit 1
+  fi
 
   # :command.command_filter
   action=${1:-}
@@ -1526,6 +1548,15 @@ labman_remove_parse_requirements() {
     esac
   done
 
+  # :command.dependencies_filter
+  if command -v ldapadduser sqlite3 >/dev/null 2>&1; then
+    deps['labman-utils']="$(command -v ldapadduser sqlite3 | head -n1)"
+  else
+    printf "missing dependency: labman-utils (ldapadduser/sqlite3)\n" >&2
+    printf "%s\n" "Run init command" >&2
+    exit 1
+  fi
+
   # :command.command_filter
   action=${1:-}
 
@@ -1772,6 +1803,15 @@ labman_addusertogroup_parse_requirements() {
     esac
   done
 
+  # :command.dependencies_filter
+  if command -v ldapadduser sqlite3 >/dev/null 2>&1; then
+    deps['labman-utils']="$(command -v ldapadduser sqlite3 | head -n1)"
+  else
+    printf "missing dependency: labman-utils (ldapadduser/sqlite3)\n" >&2
+    printf "%s\n" "Run init command" >&2
+    exit 1
+  fi
+
   # :command.command_filter
   action="addusertogroup"
 
@@ -1833,6 +1873,15 @@ labman_removeuserfromgroup_parse_requirements() {
 
     esac
   done
+
+  # :command.dependencies_filter
+  if command -v ldapadduser sqlite3 >/dev/null 2>&1; then
+    deps['labman-utils']="$(command -v ldapadduser sqlite3 | head -n1)"
+  else
+    printf "missing dependency: labman-utils (ldapadduser/sqlite3)\n" >&2
+    printf "%s\n" "Run init command" >&2
+    exit 1
+  fi
 
   # :command.command_filter
   action="removeuserfromgroup"
@@ -1896,6 +1945,15 @@ labman_addusertodiscipline_parse_requirements() {
     esac
   done
 
+  # :command.dependencies_filter
+  if command -v ldapadduser sqlite3 >/dev/null 2>&1; then
+    deps['labman-utils']="$(command -v ldapadduser sqlite3 | head -n1)"
+  else
+    printf "missing dependency: labman-utils (ldapadduser/sqlite3)\n" >&2
+    printf "%s\n" "Run init command" >&2
+    exit 1
+  fi
+
   # :command.command_filter
   action="addusertodiscipline"
 
@@ -1958,6 +2016,15 @@ labman_removeuserfromdiscipline_parse_requirements() {
     esac
   done
 
+  # :command.dependencies_filter
+  if command -v ldapadduser sqlite3 >/dev/null 2>&1; then
+    deps['labman-utils']="$(command -v ldapadduser sqlite3 | head -n1)"
+  else
+    printf "missing dependency: labman-utils (ldapadduser/sqlite3)\n" >&2
+    printf "%s\n" "Run init command" >&2
+    exit 1
+  fi
+
   # :command.command_filter
   action="removeuserfromdiscipline"
 
@@ -2019,6 +2086,15 @@ labman_set_allowedtime_parse_requirements() {
 
     esac
   done
+
+  # :command.dependencies_filter
+  if command -v ldapadduser sqlite3 >/dev/null 2>&1; then
+    deps['labman-utils']="$(command -v ldapadduser sqlite3 | head -n1)"
+  else
+    printf "missing dependency: labman-utils (ldapadduser/sqlite3)\n" >&2
+    printf "%s\n" "Run init command" >&2
+    exit 1
+  fi
 
   # :command.command_filter
   action=${1:-}
@@ -2217,6 +2293,15 @@ labman_generate_time_config_parse_requirements() {
 
     esac
   done
+
+  # :command.dependencies_filter
+  if command -v ldapadduser sqlite3 >/dev/null 2>&1; then
+    deps['labman-utils']="$(command -v ldapadduser sqlite3 | head -n1)"
+  else
+    printf "missing dependency: labman-utils (ldapadduser/sqlite3)\n" >&2
+    printf "%s\n" "Run init command" >&2
+    exit 1
+  fi
 
   # :command.command_filter
   action="generate_time_config"
