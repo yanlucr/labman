@@ -73,8 +73,41 @@ labman_init_usage() {
   fi
 
   printf "%s\n" "Usage:"
-  printf "  labman init\n"
-  printf "  labman init --help | -h\n"
+  printf "  labman init COMMAND\n"
+  printf "  labman init [COMMAND] --help | -h\n"
+  echo
+  # :command.usage_commands
+  printf "%s\n" "Commands:"
+  printf "  %s   Initalize consumers\n" "consumers"
+  echo
+
+  # :command.long_usage
+  if [[ -n $long_usage ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+labman_init_consumers_usage() {
+  if [[ -n $long_usage ]]; then
+    printf "labman init consumers - Initalize consumers\n"
+    echo
+
+  else
+    printf "labman init consumers - Initalize consumers\n"
+    echo
+
+  fi
+
+  printf "%s\n" "Usage:"
+  printf "  labman init consumers\n"
+  printf "  labman init consumers --help | -h\n"
   echo
 
   # :command.long_usage
@@ -883,27 +916,12 @@ set_user_allowedtime() {
 }
 
 # :command.command_functions
+
 # :command.function
-labman_init_command() {
-  # src/init_command.sh
-  echo "Checking required files"
-
-  if [ ! -f "inventory.ini" ]; then
-      echo "inventory.ini does not exist, try copying from the provided sample file and adjusting it."
-      exit 1
-  fi
-
-  if [ ! -f "common_vars.yml" ]; then
-      echo "common_vars.yml does not exist, try copying from the provided sample file and adjusting it."
-      exit 1
-  fi
-
-  echo "Running LDAP setup from ansible"
-  sudo ansible-playbook -b playbooks/setup_provider.yml
-
-  echo "Initializing labman database"
-  initialize_database
-
+labman_init_consumers_command() {
+  # src/init_consumers_command.sh
+  echo "Running LDAP consumer setup via ansible"
+  ansible-playbook playbooks/setup_consumers.yml
   echo "All done!"
 }
 
@@ -1250,7 +1268,83 @@ labman_init_parse_requirements() {
   fi
 
   # :command.command_filter
-  action="init"
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    consumers)
+      action="consumers"
+      shift
+      labman_init_consumers_parse_requirements "$@"
+      shift $#
+      ;;
+
+    # :command.command_fallback
+    "")
+      labman_init_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+}
+
+# :command.parse_requirements
+labman_init_consumers_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    case "${1:-}" in
+      --help | -h)
+        long_usage=yes
+        labman_init_consumers_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.dependencies_filter
+  if command -v ldapadduser sqlite3 >/dev/null 2>&1; then
+    deps['labman-utils']="$(command -v ldapadduser sqlite3 | head -n1)"
+  else
+    printf "missing dependency: labman-utils (ldapadduser/sqlite3)\n" >&2
+    printf "%s\n" "Run init command" >&2
+    exit 1
+  fi
+
+  # :command.command_filter
+  action="init consumers"
 
   # :command.parse_requirements_while
   while [[ $# -gt 0 ]]; do
@@ -2364,6 +2458,7 @@ run() {
 
   case "$action" in
     "init") labman_init_command ;;
+    "init consumers") labman_init_consumers_command ;;
     "add") labman_add_command ;;
     "add user") labman_add_user_command ;;
     "add group") labman_add_group_command ;;

@@ -7,6 +7,13 @@ commands:
   help: Run initial setup
   dependencies:
     ansible:
+  commands:
+  - name: consumers
+    help: Initalize consumers
+    dependencies:
+      labman-utils:
+        command: [ldapadduser, sqlite3]
+        help: Run init command
 
 - name: add
   alias: create
