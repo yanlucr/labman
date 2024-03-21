@@ -633,13 +633,19 @@ labman_set_allowedtime_user_usage() {
   fi
 
   printf "%s\n" "Usage:"
-  printf "  labman set_allowedtime user USER ALLOWEDTIME [ALLOWEDDAYS]\n"
+  printf "  labman set_allowedtime user USER ALLOWEDTIME [ALLOWEDDAYS] [OPTIONS]\n"
   printf "  labman set_allowedtime user --help | -h\n"
   echo
 
   # :command.long_usage
   if [[ -n $long_usage ]]; then
     printf "%s\n" "Options:"
+
+    # :command.usage_flags
+    # :flag.usage
+    printf "  %s\n" "--sync, -s"
+    printf "    Generate and sync time.conf on managed machines\n"
+    echo
 
     # :command.usage_fixed_flags
     printf "  %s\n" "--help, -h"
@@ -680,13 +686,19 @@ labman_set_allowedtime_timegroup_usage() {
   fi
 
   printf "%s\n" "Usage:"
-  printf "  labman set_allowedtime timegroup TIMEGROUP ALLOWEDTIME [ALLOWEDDAYS]\n"
+  printf "  labman set_allowedtime timegroup TIMEGROUP ALLOWEDTIME [ALLOWEDDAYS] [OPTIONS]\n"
   printf "  labman set_allowedtime timegroup --help | -h\n"
   echo
 
   # :command.long_usage
   if [[ -n $long_usage ]]; then
     printf "%s\n" "Options:"
+
+    # :command.usage_flags
+    # :flag.usage
+    printf "  %s\n" "--sync, -s"
+    printf "    Generate and sync time.conf on managed machines\n"
+    echo
 
     # :command.usage_fixed_flags
     printf "  %s\n" "--help, -h"
@@ -929,16 +941,16 @@ inspect_args() {
 
 # :command.user_lib
 # src/lib/allowedtime.sh
-get_users_allowedtime() {
-  sqlite3 labman.db "select * from user_allowedtime;"
+get_users_with_allowedtime() {
+  sqlite3 labman.db "select u.username from user_allowedtime u union select t.username from timegroup_user t;"
 }
 
-get_users_with_no_explicit_allowedtime() {
-  sqlite3 labman.db "select username from timegroup_user where timegroup='$1' and username not in (select username from user_allowedtime)";
+get_user_allowedtime() {
+  sqlite3 labman.db "select allowedtime from user_allowedtime where username='$1';"
 }
 
 get_user_allowedtime_from_timegroups() {
-  sqlite3 labman.db "select allowedtime from timegroup_allowedtime da join timegroup_user du on da.timegroup=du.timegroup where username='$1';"
+  sqlite3 labman.db "select group_concat(allowedtime,'|') from timegroup_allowedtime da join timegroup_user du on da.timegroup=du.timegroup where username='$1';"
 }
 
 clear_user_allowedtime() {
@@ -1064,6 +1076,35 @@ set_user_allowedtime() {
   sqlite3 labman.db "insert or replace into user_allowedtime values('$1','$2');"
 }
 
+# src/lib/utils.sh
+generate_time_conf() {
+    cp time.conf.sample time.conf
+
+    for user in $(get_users_with_allowedtime); do
+        timegroup_rules=$(get_user_allowedtime_from_timegroups $user)
+        user_rules=$(get_user_allowedtime $user)
+
+        rules=""
+        if [[ $timegroup_rules && $user_rules ]]; then
+            rules="$timegroup_rules|$user_rules"
+        elif [[ $timegroup_rules ]]; then
+            rules="$timegroup_rules"
+        else
+            rules="$user_rules"
+        fi
+
+        echo -e "*;*;$user;$rules" >> time.conf
+    done
+
+    echo -ne "# End of generated time.conf" >> time.conf
+
+    echo "Updated time.conf file created"
+}
+
+synchronize_time_conf() {
+    ansible-playbook playbooks/sync_time_conf.yml
+}
+
 # :command.command_functions
 # :command.function
 labman_init_command() {
@@ -1120,6 +1161,8 @@ labman_add_timegroup_command() {
   timegroup=${args[timegroup]}
 
   add_timegroup $timegroup
+
+  echo "Successfully added timegroup $timegroup to database"
 }
 
 # :command.function
@@ -1146,6 +1189,7 @@ labman_remove_timegroup_command() {
 
   remove_timegroup $timegroup
 
+  echo "Successfully deleted timegroup $timegroup from database"
 }
 
 # :command.function
@@ -1177,7 +1221,7 @@ labman_addusertotimegroup_command() {
   timegroup_exists $timegroup
 
   add_user_to_timegroup $user $timegroup
-  echo "User $user added to timegroup $timegroup"
+  echo "Successfully added user $user added to timegroup $timegroup"
 
 }
 
@@ -1189,6 +1233,8 @@ labman_removeuserfromtimegroup_command() {
 
   delete_user_from_timegroup $user $timegroup
 
+  echo "Successfully deleted user $user from timegroup $timegroup"
+
 }
 
 # :command.function
@@ -1197,6 +1243,7 @@ labman_set_allowedtime_user_command() {
   user=${args[user]}
   allowedtime=${args[allowedtime]}
   alloweddays=${args[alloweddays]}
+  sync=${args[--sync]}
 
   if [ "$(parse_alloweddays $alloweddays)" == "ERROR" ]; then
       echo "Wrong alloweddays format: $alloweddays"
@@ -1215,6 +1262,9 @@ labman_set_allowedtime_user_command() {
       else
           echo "Successfully set user $user allowed time to $allowedtime everyday"
       fi
+
+      generate_time_conf
+      synchronize_time_conf
   else
       echo "Wrong allowedtime format: $allowedtime"
       echo "Try these instead: always, never, 0800-1600(START-END)"
@@ -1228,6 +1278,7 @@ labman_set_allowedtime_timegroup_command() {
   timegroup=${args[timegroup]}
   allowedtime=${args[allowedtime]}
   alloweddays=${args[alloweddays]}
+  sync=${args[--sync]}
 
   timegroup_exists $timegroup
 
@@ -1248,6 +1299,9 @@ labman_set_allowedtime_timegroup_command() {
       else
           echo "Successfully set timegroup $timegroup allowed time to $allowedtime everyday"
       fi
+
+      generate_time_conf
+      synchronize_time_conf
   else
       echo "Wrong allowedtime format: $allowedtime"
       echo "Try these instead: always, never, 0800-1600(START-END)"
@@ -1280,47 +1334,10 @@ labman_clear_allowedtime_timegroup_command() {
 # :command.function
 labman_generate_time_config_command() {
   # src/generate_time_config_command.sh
-  generate_time_conf() {
-      OLD_IFS="$IFS"
-      cp time.conf.sample time.conf
-
-      # for users with explicit rules against them
-      for line in $(get_users_allowedtime); do
-          IFS='|'
-          read -ra arr <<< "$line"
-          IFS="$OLD_IFS"
-          user=${arr[0]}
-          rules=${arr[1]}
-
-          for extra_rule in $(get_user_allowedtime_from_timegroups $user); do
-              rules="$extra_rule|$rules"
-          done
-
-          echo -e "\n*;*;$user;$rules" >> time.conf
-      done
-
-      # for users with no explicit rules
-      for line in $(get_timegroups_allowedtime); do
-          IFS='|'
-          read -ra arr <<< "$line"
-          IFS="$OLD_IFS"
-          timegroup=${arr[0]}
-          allowedtime=${arr[1]}
-
-          for user in $(get_users_with_no_explicit_allowedtime $timegroup); do
-              echo -e "\n*;*;$user;$allowedtime" >> time.conf
-          done
-      done
-
-      echo -ne "\n# End of generated time.conf" >> time.conf
-  }
-
   print=${args[--print]}
   sync=${args[--sync]}
 
   generate_time_conf
-
-  echo "Updated time.conf file created"
 
   if [[ $print ]]; then
       cat time.conf
@@ -1328,7 +1345,7 @@ labman_generate_time_config_command() {
   fi
 
   if [[ $sync ]]; then
-      ansible-playbook playbooks/sync_time_conf.yml
+      synchronize_time_conf
   fi
 }
 
@@ -2495,6 +2512,13 @@ labman_set_allowedtime_user_parse_requirements() {
   while [[ $# -gt 0 ]]; do
     key="$1"
     case "$key" in
+      # :flag.case
+      --sync | -s)
+
+        # :flag.case_no_arg
+        args['--sync']=1
+        shift
+        ;;
 
       -?*)
         printf "invalid option: %s\n" "$key" >&2
@@ -2528,11 +2552,11 @@ labman_set_allowedtime_user_parse_requirements() {
 
   # :command.required_args_filter
   if [[ -z ${args['user']+x} ]]; then
-    printf "missing required argument: USER\nusage: labman set_allowedtime user USER ALLOWEDTIME [ALLOWEDDAYS]\n" >&2
+    printf "missing required argument: USER\nusage: labman set_allowedtime user USER ALLOWEDTIME [ALLOWEDDAYS] [OPTIONS]\n" >&2
     exit 1
   fi
   if [[ -z ${args['allowedtime']+x} ]]; then
-    printf "missing required argument: ALLOWEDTIME\nusage: labman set_allowedtime user USER ALLOWEDTIME [ALLOWEDDAYS]\n" >&2
+    printf "missing required argument: ALLOWEDTIME\nusage: labman set_allowedtime user USER ALLOWEDTIME [ALLOWEDDAYS] [OPTIONS]\n" >&2
     exit 1
   fi
 
@@ -2563,6 +2587,13 @@ labman_set_allowedtime_timegroup_parse_requirements() {
   while [[ $# -gt 0 ]]; do
     key="$1"
     case "$key" in
+      # :flag.case
+      --sync | -s)
+
+        # :flag.case_no_arg
+        args['--sync']=1
+        shift
+        ;;
 
       -?*)
         printf "invalid option: %s\n" "$key" >&2
@@ -2596,11 +2627,11 @@ labman_set_allowedtime_timegroup_parse_requirements() {
 
   # :command.required_args_filter
   if [[ -z ${args['timegroup']+x} ]]; then
-    printf "missing required argument: TIMEGROUP\nusage: labman set_allowedtime timegroup TIMEGROUP ALLOWEDTIME [ALLOWEDDAYS]\n" >&2
+    printf "missing required argument: TIMEGROUP\nusage: labman set_allowedtime timegroup TIMEGROUP ALLOWEDTIME [ALLOWEDDAYS] [OPTIONS]\n" >&2
     exit 1
   fi
   if [[ -z ${args['allowedtime']+x} ]]; then
-    printf "missing required argument: ALLOWEDTIME\nusage: labman set_allowedtime timegroup TIMEGROUP ALLOWEDTIME [ALLOWEDDAYS]\n" >&2
+    printf "missing required argument: ALLOWEDTIME\nusage: labman set_allowedtime timegroup TIMEGROUP ALLOWEDTIME [ALLOWEDDAYS] [OPTIONS]\n" >&2
     exit 1
   fi
 

@@ -1,6 +1,7 @@
 user=${args[user]}
 allowedtime=${args[allowedtime]}
 alloweddays=${args[alloweddays]}
+sync=${args[--sync]}
 
 if [ "$(parse_alloweddays $alloweddays)" == "ERROR" ]; then
     echo "Wrong alloweddays format: $alloweddays"
@@ -19,6 +20,9 @@ if [ "$parsed_allowedtime" != "ERROR" ]; then
     else
         echo "Successfully set user $user allowed time to $allowedtime everyday"
     fi
+
+    generate_time_conf
+    synchronize_time_conf
 else
     echo "Wrong allowedtime format: $allowedtime"
     echo "Try these instead: always, never, 0800-1600(START-END)"
