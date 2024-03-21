@@ -4,10 +4,6 @@ add_user() {
   ldapaddusertogroup $1 administrators
 }
 
-add_user_to_group() {
-  ldapaddusertogroup $1 $2
-}
-
 remove_user() {
     sqlite3 labman.db "delete from user_allowedtime where username='$1';"
     ldapdeletegroup $1

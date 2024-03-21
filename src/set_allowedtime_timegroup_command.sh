@@ -1,6 +1,8 @@
-discipline=${args[discipline]}
+timegroup=${args[timegroup]}
 allowedtime=${args[allowedtime]}
 alloweddays=${args[alloweddays]}
+
+timegroup_exists $timegroup
 
 if [ "$(parse_alloweddays $alloweddays)" == "ERROR" ]; then
     echo "Wrong alloweddays format: $alloweddays"
@@ -12,12 +14,12 @@ fi
 parsed_allowedtime=$(parse_allowedtime $allowedtime $alloweddays)
 
 if [ "$parsed_allowedtime" != "ERROR" ]; then
-    set_discipline_allowedtime $discipline $parsed_allowedtime
+    set_timegroup_allowedtime $timegroup $parsed_allowedtime
 
     if [[ $alloweddays ]]; then
-        echo "Successfully set discipline $discipline allowed time to $allowedtime on $alloweddays"
+        echo "Successfully set timegroup $timegroup allowed time to $allowedtime on $alloweddays"
     else
-        echo "Successfully set discipline $discipline allowed time to $allowedtime everyday"
+        echo "Successfully set timegroup $timegroup allowed time to $allowedtime everyday"
     fi
 else
     echo "Wrong allowedtime format: $allowedtime"

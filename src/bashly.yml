@@ -35,11 +35,11 @@ commands:
     - name: group
       help: Group name
       required: true
-  - name: discipline
-    help: Add new discipline
+  - name: timegroup
+    help: Add new timegroup
     args:
-    - name: discipline
-      help: Discipline name
+    - name: timegroup
+      help: Timegroup name
       required: true
 
 - name: remove
@@ -63,11 +63,11 @@ commands:
     - name: group
       help: Group name
       required: true
-  - name: discipline
-    help: Remove discipline
+  - name: timegroup
+    help: Remove timegroup
     args:
-    - name: discipline
-      help: Discipline name
+    - name: timegroup
+      help: Timegroup name
       required: true
 
 - name: addusertogroup
@@ -97,35 +97,35 @@ commands:
     help: Group to remove user from
     required: true
 
-- name: addusertodiscipline
-  help: Add user to discipline
+- name: addusertotimegroup
+  help: Add user to timegroup
   dependencies:
     labman-utils:
       command: [ldapadduser, sqlite3]
       help: Run init command
   args:
   - name: user
-    help: User to be added to discipline
+    help: User to be added to timegroup
     required: true
-  - name: discipline
-    help: Discipline to add user to
+  - name: timegroup
+    help: Timegroup to add user to
     required: true
-- name: removeuserfromdiscipline
-  help: Remove user from discipline
+- name: removeuserfromtimegroup
+  help: Remove user from timegroup
   dependencies:
     labman-utils:
       command: [ldapadduser, sqlite3]
       help: Run init command
   args:
   - name: user
-    help: User to be removed from discipline
+    help: User to be removed from timegroup
     required: true
-  - name: discipline
-    help: Discipline to remove user from
+  - name: timegroup
+    help: Timegroup to remove user from
     required: true
 
 - name: set_allowedtime
-  help: Set allowed time for users or disciplines
+  help: Set allowed time for users or timegroups
   dependencies:
     labman-utils:
       command: [ldapadduser, sqlite3]
@@ -142,20 +142,20 @@ commands:
       required: true
     - name: alloweddays
       help: Allowed days
-  - name: discipline
-    help: Set allowed time for disciplines
+  - name: timegroup
+    help: Set allowed time for timegroups
     args:
-    - name: discipline
-      help: Affected discipline
+    - name: timegroup
+      help: Affected timegroup
       required: true
     - name: allowedtime
-      help: Allowed time for discipline
+      help: Allowed time for timegroup
       required: true
     - name: alloweddays
       help: Allowed days
 
 - name: clear_allowedtime
-  help: Clear allowed time for users or disciplines
+  help: Clear allowed time for users or timegroups
   dependencies:
     labman-utils:
       command: [ldapadduser, sqlite3]
@@ -167,11 +167,11 @@ commands:
     - name: user
       help: Affected user
       required: true
-  - name: discipline
-    help: Set allowed time for disciplines
+  - name: timegroup
+    help: Set allowed time for timegroups
     args:
-    - name: discipline
-      help: Affected discipline
+    - name: timegroup
+      help: Affected timegroup
       required: true
 
 - name: generate_time_config

@@ -10,7 +10,7 @@ generate_time_conf() {
         user=${arr[0]}
         rules=${arr[1]}
 
-        for extra_rule in $(get_user_allowedtime_from_disciplines $user); do
+        for extra_rule in $(get_user_allowedtime_from_timegroups $user); do
             rules="$extra_rule|$rules"
         done
 
@@ -18,14 +18,14 @@ generate_time_conf() {
     done
 
     # for users with no explicit rules
-    for line in $(get_disciplines_allowedtime); do
+    for line in $(get_timegroups_allowedtime); do
         IFS='|'
         read -ra arr <<< "$line"
         IFS="$OLD_IFS"
-        discipline=${arr[0]}
+        timegroup=${arr[0]}
         allowedtime=${arr[1]}
 
-        for user in $(get_users_with_no_explicit_allowedtime $discipline); do
+        for user in $(get_users_with_no_explicit_allowedtime $timegroup); do
             echo -e "\n*;*;$user;$allowedtime" >> time.conf
         done
     done
