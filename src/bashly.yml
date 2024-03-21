@@ -41,6 +41,11 @@ commands:
     - name: timegroup
       help: Timegroup name
       required: true
+    - name: allowedtime
+      help: Allowed time for user
+      required: true
+    - name: alloweddays
+      help: Allowed days
 
 - name: remove
   alias: delete

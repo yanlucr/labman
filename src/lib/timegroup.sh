@@ -8,7 +8,7 @@ timegroup_exists() {
 }
 
 add_timegroup() {
-  sqlite3 labman.db "insert into timegroups values('$1');"
+  sqlite3 labman.db "insert into timegroups values('$1', '$2');"
 }
 
 add_user_to_timegroup() {
@@ -16,7 +16,6 @@ add_user_to_timegroup() {
 }
 
 remove_timegroup() {
-  sqlite3 labman.db "delete from timegroup_allowedtime where timegroup='$1';"
   sqlite3 labman.db "delete from timegroup_user where timegroup='$1';"
   sqlite3 labman.db "delete from timegroups where timegroup='$1';"
 }
@@ -26,5 +25,5 @@ delete_user_from_timegroup() {
 }
 
 set_timegroup_allowedtime() {
-  sqlite3 labman.db "insert or replace into timegroup_allowedtime values('$1','$2');"
+  sqlite3 labman.db "insert or replace into timegroups values('$1','$2');"
 }

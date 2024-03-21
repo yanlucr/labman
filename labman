@@ -245,7 +245,7 @@ labman_add_timegroup_usage() {
   fi
 
   printf "%s\n" "Usage:"
-  printf "  labman add timegroup TIMEGROUP\n"
+  printf "  labman add timegroup TIMEGROUP ALLOWEDTIME [ALLOWEDDAYS]\n"
   printf "  labman add timegroup --help | -h\n"
   echo
 
@@ -264,6 +264,16 @@ labman_add_timegroup_usage() {
     # :argument.usage
     printf "  %s\n" "TIMEGROUP"
     printf "    Timegroup name\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "ALLOWEDTIME"
+    printf "    Allowed time for user\n"
+    echo
+
+    # :argument.usage
+    printf "  %s\n" "ALLOWEDDAYS"
+    printf "    Allowed days\n"
     echo
 
   fi
@@ -950,27 +960,22 @@ get_user_allowedtime() {
 }
 
 get_user_allowedtime_from_timegroups() {
-  sqlite3 labman.db "select group_concat(allowedtime,'|') from timegroup_allowedtime da join timegroup_user du on da.timegroup=du.timegroup where username='$1';"
+  sqlite3 labman.db "select group_concat(allowedtime,'|') from timegroups t join timegroup_user tu on t.timegroup=tu.timegroup where username='$1';"
 }
 
 clear_user_allowedtime() {
   sqlite3 labman.db "delete from user_allowedtime where username='$1'"
 }
 
-get_timegroups_allowedtime() {
-  sqlite3 labman.db "select * from timegroup_allowedtime;"
-}
-
 clear_timegroup_allowedtime() {
-  sqlite3 labman.db "delete from timegroup_allowedtime where timegroup='$1'"
+  sqlite3 labman.db "update timegroups set allowedtime='Al0000-2400' where timegroup='$1'"
 }
 
 # src/lib/database.sh
 initialize_database() {
     sqlite3 labman.db "create table user_allowedtime(username text unique, allowedtime text);"
-    sqlite3 labman.db "create table timegroups(timegroup text unique);"
+    sqlite3 labman.db "create table timegroups(timegroup text unique, allowedtime text);"
     sqlite3 labman.db "create table timegroup_user(timegroup text, username text, unique(timegroup, username));"
-    sqlite3 labman.db "create table timegroup_allowedtime(timegroup text unique, allowedtime text);"
 }
 
 # src/lib/groups.sh
@@ -1034,7 +1039,7 @@ timegroup_exists() {
 }
 
 add_timegroup() {
-  sqlite3 labman.db "insert into timegroups values('$1');"
+  sqlite3 labman.db "insert into timegroups values('$1', '$2');"
 }
 
 add_user_to_timegroup() {
@@ -1042,7 +1047,6 @@ add_user_to_timegroup() {
 }
 
 remove_timegroup() {
-  sqlite3 labman.db "delete from timegroup_allowedtime where timegroup='$1';"
   sqlite3 labman.db "delete from timegroup_user where timegroup='$1';"
   sqlite3 labman.db "delete from timegroups where timegroup='$1';"
 }
@@ -1052,7 +1056,7 @@ delete_user_from_timegroup() {
 }
 
 set_timegroup_allowedtime() {
-  sqlite3 labman.db "insert or replace into timegroup_allowedtime values('$1','$2');"
+  sqlite3 labman.db "insert or replace into timegroups values('$1','$2');"
 }
 
 # src/lib/users.sh
@@ -1159,10 +1163,33 @@ labman_add_group_command() {
 labman_add_timegroup_command() {
   # src/add_timegroup_command.sh
   timegroup=${args[timegroup]}
+  allowedtime=${args[allowedtime]}
+  alloweddays=${args[alloweddays]}
 
-  add_timegroup $timegroup
+  if [ "$(parse_alloweddays $alloweddays)" == "ERROR" ]; then
+      echo "Wrong alloweddays format: $alloweddays"
+      echo "Try combinations of these instead: Mo Tu We Th Fr Sa Su Wk Wd Al"
+      echo "Read more in the 'time.conf' man page"
+      exit 1
+  fi
 
-  echo "Successfully added timegroup $timegroup to database"
+  parsed_allowedtime=$(parse_allowedtime $allowedtime $alloweddays)
+
+  if [ "$parsed_allowedtime" != "ERROR" ]; then
+      add_timegroup $timegroup $parsed_allowedtime
+
+      echo "Successfully added timegroup $timegroup to database"
+
+      if [[ $alloweddays ]]; then
+          echo "Successfully set timegroup $timegroup allowed time to $allowedtime on $alloweddays"
+      else
+          echo "Successfully set timegroup $timegroup allowed time to $allowedtime everyday"
+      fi
+  else
+      echo "Wrong allowedtime format: $allowedtime"
+      echo "Try these instead: always, never, 0800-1600(START-END)"
+      exit 1
+  fi
 }
 
 # :command.function
@@ -1263,8 +1290,10 @@ labman_set_allowedtime_user_command() {
           echo "Successfully set user $user allowed time to $allowedtime everyday"
       fi
 
-      generate_time_conf
-      synchronize_time_conf
+      if [[ $sync ]]; then
+          generate_time_conf
+          synchronize_time_conf
+      fi
   else
       echo "Wrong allowedtime format: $allowedtime"
       echo "Try these instead: always, never, 0800-1600(START-END)"
@@ -1300,8 +1329,10 @@ labman_set_allowedtime_timegroup_command() {
           echo "Successfully set timegroup $timegroup allowed time to $allowedtime everyday"
       fi
 
-      generate_time_conf
-      synchronize_time_conf
+      if [[ $sync ]]; then
+          generate_time_conf
+          synchronize_time_conf
+      fi
   else
       echo "Wrong allowedtime format: $allowedtime"
       echo "Try these instead: always, never, 0800-1600(START-END)"
@@ -1836,6 +1867,14 @@ labman_add_timegroup_parse_requirements() {
         if [[ -z ${args['timegroup']+x} ]]; then
           args['timegroup']=$1
           shift
+        # :argument.case
+        elif [[ -z ${args['allowedtime']+x} ]]; then
+          args['allowedtime']=$1
+          shift
+        # :argument.case
+        elif [[ -z ${args['alloweddays']+x} ]]; then
+          args['alloweddays']=$1
+          shift
         else
           printf "invalid argument: %s\n" "$key" >&2
           exit 1
@@ -1848,7 +1887,11 @@ labman_add_timegroup_parse_requirements() {
 
   # :command.required_args_filter
   if [[ -z ${args['timegroup']+x} ]]; then
-    printf "missing required argument: TIMEGROUP\nusage: labman add timegroup TIMEGROUP\n" >&2
+    printf "missing required argument: TIMEGROUP\nusage: labman add timegroup TIMEGROUP ALLOWEDTIME [ALLOWEDDAYS]\n" >&2
+    exit 1
+  fi
+  if [[ -z ${args['allowedtime']+x} ]]; then
+    printf "missing required argument: ALLOWEDTIME\nusage: labman add timegroup TIMEGROUP ALLOWEDTIME [ALLOWEDDAYS]\n" >&2
     exit 1
   fi
 

@@ -23,8 +23,10 @@ if [ "$parsed_allowedtime" != "ERROR" ]; then
         echo "Successfully set timegroup $timegroup allowed time to $allowedtime everyday"
     fi
 
-    generate_time_conf
-    synchronize_time_conf
+    if [[ $sync ]]; then
+        generate_time_conf
+        synchronize_time_conf
+    fi
 else
     echo "Wrong allowedtime format: $allowedtime"
     echo "Try these instead: always, never, 0800-1600(START-END)"
